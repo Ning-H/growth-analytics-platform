@@ -1,0 +1,108 @@
+version: 2
+
+models:
+  - name: dim_user
+    columns:
+      - name: resolved_user_id
+        tests:
+          - not_null
+          - unique
+
+  - name: dim_campaign
+    columns:
+      - name: campaign_id
+        tests:
+          - not_null
+
+  - name: dim_channel
+    columns:
+      - name: channel
+        tests:
+          - not_null
+          - unique
+
+  - name: fact_user_events
+    columns:
+      - name: event_id
+        tests:
+          - not_null
+          - unique
+      - name: resolved_user_id
+        tests:
+          - not_null
+
+  - name: fact_touchpoints
+    columns:
+      - name: touchpoint_id
+        tests:
+          - not_null
+          - unique
+
+  - name: fact_conversions
+    columns:
+      - name: conversion_id
+        tests:
+          - not_null
+          - unique
+      - name: resolved_user_id
+        tests:
+          - not_null
+
+  - name: fact_attribution_first_touch
+    columns:
+      - name: conversion_id
+        tests:
+          - not_null
+      - name: touchpoint_id
+        tests:
+          - not_null
+
+  - name: fact_attribution_last_touch
+    columns:
+      - name: conversion_id
+        tests:
+          - not_null
+      - name: touchpoint_id
+        tests:
+          - not_null
+
+  - name: fact_attribution_linear
+    columns:
+      - name: conversion_id
+        tests:
+          - not_null
+      - name: touchpoint_id
+        tests:
+          - not_null
+
+  - name: fact_attribution_time_decay
+    columns:
+      - name: conversion_id
+        tests:
+          - not_null
+      - name: touchpoint_id
+        tests:
+          - not_null
+
+  - name: fact_attribution_position_based
+    columns:
+      - name: conversion_id
+        tests:
+          - not_null
+      - name: touchpoint_id
+        tests:
+          - not_null
+
+  - name: funnel_step_completion
+    columns:
+      - name: funnel_completion_id
+        tests:
+          - not_null
+          - unique
+
+  - name: cohort_user_signup_week
+    columns:
+      - name: resolved_user_id
+        tests:
+          - not_null
+          - unique

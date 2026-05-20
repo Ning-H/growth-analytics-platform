@@ -1,0 +1,15 @@
+version: 2
+
+sources:
+  - name: growth_raw
+    database: "{{ env_var('GCP_PROJECT_ID') }}"
+    schema: "{{ env_var('BIGQUERY_DATASET_RAW', 'growth_raw') }}"
+    tables:
+      - name: bronze_events_union
+        config:
+          loaded_at_field: ingested_at
+          freshness:
+            warn_after:
+              count: 48
+              period: hour
+      - name: device_to_user

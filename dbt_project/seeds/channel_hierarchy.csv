@@ -1,0 +1,7 @@
+channel,channel_group,channel_type,is_paid
+tiktok_ads,paid_social,paid,true
+meta_ads,paid_social,paid,true
+google_ads,paid_search,paid,true
+email,owned,owned,false
+organic,organic,organic,false
+referral,partner,earned,false

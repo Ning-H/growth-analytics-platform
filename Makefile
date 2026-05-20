@@ -1,4 +1,4 @@
-.PHONY: setup kafka-up kafka-down simulate simulate-dry-run simulate-historical simulate-live stream stream-up stream-down dbt-run dashboard test
+.PHONY: setup kafka-up kafka-down simulate simulate-dry-run simulate-historical simulate-live stream stream-up stream-down dbt-deps dbt-seed dbt-run dbt-test dbt-docs dashboard test
 
 setup:
 	uv sync --python 3.13
@@ -35,8 +35,20 @@ stream-down:
 	@if test -f logs/identity_stream.pid; then kill $$(cat logs/identity_stream.pid) 2>/dev/null || true; rm logs/identity_stream.pid; fi
 	rm -rf checkpoints
 
+dbt-deps:
+	uv run dotenv -f .env run -- dbt deps --project-dir dbt_project
+
+dbt-seed:
+	uv run dotenv -f .env run -- dbt seed --project-dir dbt_project --profiles-dir dbt_project
+
 dbt-run:
-	@echo "dbt transformations will be implemented in a later phase."
+	uv run dotenv -f .env run -- dbt run --project-dir dbt_project --profiles-dir dbt_project
+
+dbt-test:
+	uv run dotenv -f .env run -- dbt test --project-dir dbt_project --profiles-dir dbt_project
+
+dbt-docs:
+	uv run dotenv -f .env run -- dbt docs generate --project-dir dbt_project --profiles-dir dbt_project
 
 dashboard:
 	@echo "Streamlit dashboard will be implemented in a later phase."

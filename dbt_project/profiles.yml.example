@@ -1,0 +1,13 @@
+growth_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: service-account
+      project: "{{ env_var('GCP_PROJECT_ID') }}"
+      dataset: "{{ env_var('BIGQUERY_DATASET_ANALYTICS', 'growth_analytics') }}"
+      keyfile: "{{ env_var('GCP_SERVICE_ACCOUNT_JSON_PATH') }}"
+      location: US
+      threads: 4
+      job_execution_timeout_seconds: 300
+      job_retries: 1

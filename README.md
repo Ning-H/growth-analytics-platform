@@ -10,7 +10,7 @@ The finished system is designed around a modern warehouse-first stack:
 
 Python 3.13+ simulator -> Kafka -> PySpark Structured Streaming -> BigQuery -> dbt Core + MetricFlow -> OpenAI-powered data discovery -> Streamlit dashboard.
 
-Current status: Phase 3 PySpark streaming ingestion to BigQuery bronze.
+Current status: Phase 4 dbt silver/gold transformations with attribution, funnel, and cohort marts.
 
 ## Architecture
 
@@ -33,6 +33,10 @@ cp .env.example .env
 make kafka-up
 make simulate-historical
 make stream-up
+make dbt-deps
+make dbt-seed
+make dbt-run
+make dbt-test
 ```
 
 Kafka UI runs at `http://localhost:8080`.
