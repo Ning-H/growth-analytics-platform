@@ -1,0 +1,150 @@
+metrics:
+  - name: attributed_conversions_first_touch
+    description: Conversions credited to touchpoints under first-touch attribution.
+    type: simple
+    label: Attributed conversions first touch
+    type_params:
+      measure: attributed_conversions_first_touch
+
+  - name: attributed_revenue_first_touch
+    description: Conversion value credited under first-touch attribution.
+    type: simple
+    label: Attributed revenue first touch
+    type_params:
+      measure: attributed_revenue_first_touch
+
+  - name: attributed_conversions_last_touch
+    description: Conversions credited to touchpoints under last-touch attribution.
+    type: simple
+    label: Attributed conversions last touch
+    type_params:
+      measure: attributed_conversions_last_touch
+
+  - name: attributed_revenue_last_touch
+    description: Conversion value credited under last-touch attribution.
+    type: simple
+    label: Attributed revenue last touch
+    type_params:
+      measure: attributed_revenue_last_touch
+
+  - name: attributed_conversions_linear
+    description: Fractional conversions credited under linear attribution.
+    type: simple
+    label: Attributed conversions linear
+    type_params:
+      measure: attributed_conversions_linear
+
+  - name: attributed_revenue_linear
+    description: Conversion value credited under linear attribution.
+    type: simple
+    label: Attributed revenue linear
+    type_params:
+      measure: attributed_revenue_linear
+
+  - name: attributed_conversions_time_decay
+    description: Fractional conversions credited under 7-day half-life time-decay attribution.
+    type: simple
+    label: Attributed conversions time decay
+    type_params:
+      measure: attributed_conversions_time_decay
+
+  - name: attributed_revenue_time_decay
+    description: Conversion value credited under time-decay attribution.
+    type: simple
+    label: Attributed revenue time decay
+    type_params:
+      measure: attributed_revenue_time_decay
+
+  - name: attributed_conversions_position_based
+    description: Fractional conversions credited under 40/20/40 position-based attribution.
+    type: simple
+    label: Attributed conversions position based
+    type_params:
+      measure: attributed_conversions_position_based
+
+  - name: attributed_revenue_position_based
+    description: Conversion value credited under position-based attribution.
+    type: simple
+    label: Attributed revenue position based
+    type_params:
+      measure: attributed_revenue_position_based
+
+  - name: cac_first_touch
+    description: Spend divided by first-touch attributed conversions.
+    type: ratio
+    label: CAC first touch
+    type_params:
+      numerator: total_spend
+      denominator: attributed_conversions_first_touch
+
+  - name: cac_last_touch
+    description: Spend divided by last-touch attributed conversions.
+    type: ratio
+    label: CAC last touch
+    type_params:
+      numerator: total_spend
+      denominator: attributed_conversions_last_touch
+
+  - name: cac_linear
+    description: Spend divided by linear attributed conversions.
+    type: ratio
+    label: CAC linear
+    type_params:
+      numerator: total_spend
+      denominator: attributed_conversions_linear
+
+  - name: cac_time_decay
+    description: Spend divided by time-decay attributed conversions.
+    type: ratio
+    label: CAC time decay
+    type_params:
+      numerator: total_spend
+      denominator: attributed_conversions_time_decay
+
+  - name: cac_position_based
+    description: Spend divided by position-based attributed conversions.
+    type: ratio
+    label: CAC position based
+    type_params:
+      numerator: total_spend
+      denominator: attributed_conversions_position_based
+
+  - name: roas_first_touch
+    description: First-touch attributed revenue divided by spend.
+    type: ratio
+    label: ROAS first touch
+    type_params:
+      numerator: attributed_revenue_first_touch
+      denominator: total_spend
+
+  - name: roas_last_touch
+    description: Last-touch attributed revenue divided by spend.
+    type: ratio
+    label: ROAS last touch
+    type_params:
+      numerator: attributed_revenue_last_touch
+      denominator: total_spend
+
+  - name: roas_linear
+    description: Linear attributed revenue divided by spend.
+    type: ratio
+    label: ROAS linear
+    type_params:
+      numerator: attributed_revenue_linear
+      denominator: total_spend
+
+  - name: roas_time_decay
+    description: Time-decay attributed revenue divided by spend.
+    type: ratio
+    label: ROAS time decay
+    type_params:
+      numerator: attributed_revenue_time_decay
+      denominator: total_spend
+
+  - name: roas_position_based
+    description: Position-based attributed revenue divided by spend.
+    type: ratio
+    label: ROAS position based
+    type_params:
+      numerator: attributed_revenue_position_based
+      denominator: total_spend

@@ -1,0 +1,165 @@
+semantic_models:
+  - name: attribution_first_touch
+    description: First-touch attribution records, one row per credited touchpoint.
+    model: ref('fact_attribution_first_touch')
+    defaults:
+      agg_time_dimension: metric_date
+    entities:
+      - name: attribution_record
+        type: primary
+        expr: concat(conversion_id, '|', touchpoint_id)
+      - name: conversion
+        type: foreign
+        expr: conversion_id
+      - name: campaign
+        type: foreign
+        expr: campaign_id
+    dimensions:
+      - name: metric_date
+        expr: current_date()
+        type: time
+        type_params:
+          time_granularity: day
+      - name: channel
+        type: categorical
+      - name: campaign_id
+        type: categorical
+    measures:
+      - name: attributed_conversions_first_touch
+        expr: conversion_id
+        agg: count_distinct
+      - name: attributed_revenue_first_touch
+        expr: attributed_revenue
+        agg: sum
+
+  - name: attribution_last_touch
+    description: Last-touch attribution records, one row per credited touchpoint.
+    model: ref('fact_attribution_last_touch')
+    defaults:
+      agg_time_dimension: metric_date
+    entities:
+      - name: attribution_record_last_touch
+        type: primary
+        expr: concat(conversion_id, '|', touchpoint_id)
+      - name: conversion
+        type: foreign
+        expr: conversion_id
+      - name: campaign
+        type: foreign
+        expr: campaign_id
+    dimensions:
+      - name: metric_date
+        expr: current_date()
+        type: time
+        type_params:
+          time_granularity: day
+      - name: channel
+        type: categorical
+      - name: campaign_id
+        type: categorical
+    measures:
+      - name: attributed_conversions_last_touch
+        expr: conversion_id
+        agg: count_distinct
+      - name: attributed_revenue_last_touch
+        expr: attributed_revenue
+        agg: sum
+
+  - name: attribution_linear
+    description: Linear attribution records, one row per credited touchpoint.
+    model: ref('fact_attribution_linear')
+    defaults:
+      agg_time_dimension: metric_date
+    entities:
+      - name: attribution_record_linear
+        type: primary
+        expr: concat(conversion_id, '|', touchpoint_id)
+      - name: conversion
+        type: foreign
+        expr: conversion_id
+      - name: campaign
+        type: foreign
+        expr: campaign_id
+    dimensions:
+      - name: metric_date
+        expr: current_date()
+        type: time
+        type_params:
+          time_granularity: day
+      - name: channel
+        type: categorical
+      - name: campaign_id
+        type: categorical
+    measures:
+      - name: attributed_conversions_linear
+        expr: credit_fraction
+        agg: sum
+      - name: attributed_revenue_linear
+        expr: attributed_revenue
+        agg: sum
+
+  - name: attribution_time_decay
+    description: Time-decay attribution records, one row per credited touchpoint.
+    model: ref('fact_attribution_time_decay')
+    defaults:
+      agg_time_dimension: metric_date
+    entities:
+      - name: attribution_record_time_decay
+        type: primary
+        expr: concat(conversion_id, '|', touchpoint_id)
+      - name: conversion
+        type: foreign
+        expr: conversion_id
+      - name: campaign
+        type: foreign
+        expr: campaign_id
+    dimensions:
+      - name: metric_date
+        expr: current_date()
+        type: time
+        type_params:
+          time_granularity: day
+      - name: channel
+        type: categorical
+      - name: campaign_id
+        type: categorical
+    measures:
+      - name: attributed_conversions_time_decay
+        expr: credit_fraction
+        agg: sum
+      - name: attributed_revenue_time_decay
+        expr: attributed_revenue
+        agg: sum
+
+  - name: attribution_position_based
+    description: Position-based attribution records, one row per credited touchpoint.
+    model: ref('fact_attribution_position_based')
+    defaults:
+      agg_time_dimension: metric_date
+    entities:
+      - name: attribution_record_position_based
+        type: primary
+        expr: concat(conversion_id, '|', touchpoint_id)
+      - name: conversion
+        type: foreign
+        expr: conversion_id
+      - name: campaign
+        type: foreign
+        expr: campaign_id
+    dimensions:
+      - name: metric_date
+        expr: current_date()
+        type: time
+        type_params:
+          time_granularity: day
+      - name: channel
+        type: categorical
+      - name: campaign_id
+        type: categorical
+    measures:
+      - name: attributed_conversions_position_based
+        expr: credit_fraction
+        agg: sum
+      - name: attributed_revenue_position_based
+        expr: attributed_revenue
+        agg: sum

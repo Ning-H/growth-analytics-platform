@@ -1,0 +1,84 @@
+semantic_models:
+  - name: funnel
+    description: Funnel-step completion semantic model.
+    model: ref('funnel_step_completion')
+    defaults:
+      agg_time_dimension: first_completed_date
+    entities:
+      - name: funnel_completion
+        type: primary
+        expr: funnel_completion_id
+      - name: user
+        type: foreign
+        expr: resolved_user_id
+    dimensions:
+      - name: first_completed_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: objective
+        type: categorical
+      - name: step_name
+        type: categorical
+      - name: first_step_channel
+        type: categorical
+    measures:
+      - name: funnel_users
+        expr: resolved_user_id
+        agg: count_distinct
+
+  - name: cohort_retention
+    description: Weekly signup cohort retention semantic model.
+    model: ref('cohort_retention_matrix')
+    defaults:
+      agg_time_dimension: signup_week
+    entities:
+      - name: cohort_week
+        type: primary
+        expr: concat(cast(signup_week as string), '|', cast(weeks_since_signup as string), '|', coalesce(acquisition_channel_first_touch, 'unknown'), '|', first_objective)
+    dimensions:
+      - name: signup_week
+        type: time
+        type_params:
+          time_granularity: week
+      - name: weeks_since_signup
+        type: categorical
+      - name: acquisition_channel_first_touch
+        type: categorical
+      - name: first_objective
+        type: categorical
+    measures:
+      - name: retained_users
+        expr: retained_users
+        agg: sum
+      - name: cohort_users
+        expr: cohort_users
+        agg: sum
+
+  - name: campaign_spend_daily
+    description: Daily campaign spend by campaign, channel, and objective.
+    model: ref('fact_campaign_spend_daily')
+    defaults:
+      agg_time_dimension: spend_date
+    entities:
+      - name: campaign_spend_day
+        type: primary
+        expr: campaign_spend_day_id
+      - name: campaign
+        type: foreign
+        expr: campaign_id
+    dimensions:
+      - name: spend_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: campaign_id
+        type: categorical
+      - name: channel
+        type: categorical
+      - name: objective
+        type: categorical
+    measures:
+      - name: total_spend
+        expr: daily_spend
+        agg: sum

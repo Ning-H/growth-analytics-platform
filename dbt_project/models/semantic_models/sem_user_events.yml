@@ -1,0 +1,58 @@
+semantic_models:
+  - name: user_events
+    description: Event-level semantic model for active users, signups, funnel activity, and objective-level analysis.
+    model: ref('fact_user_events')
+    defaults:
+      agg_time_dimension: event_date
+    entities:
+      - name: event
+        type: primary
+        expr: event_id
+      - name: user
+        type: foreign
+        expr: resolved_user_id
+      - name: campaign
+        type: foreign
+        expr: campaign_id
+    dimensions:
+      - name: event_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: event_type
+        type: categorical
+      - name: funnel_step
+        type: categorical
+      - name: objective
+        type: categorical
+      - name: channel
+        type: categorical
+      - name: campaign_id
+        type: categorical
+      - name: country
+        type: categorical
+      - name: device_type
+        type: categorical
+      - name: platform
+        type: categorical
+    measures:
+      - name: event_count
+        description: Count of raw user events after bronze deduplication.
+        expr: event_id
+        agg: count_distinct
+      - name: active_users
+        description: Distinct resolved users with any event.
+        expr: resolved_user_id
+        agg: count_distinct
+      - name: signup_events
+        description: Distinct signup events.
+        expr: case when event_type = 'signup' then event_id end
+        agg: count_distinct
+      - name: activated_users
+        description: Distinct users who reached activation.
+        expr: case when event_type = 'activation' then resolved_user_id end
+        agg: count_distinct
+      - name: purchasing_users
+        description: Distinct users with a first or repeat purchase event.
+        expr: case when event_type in ('purchase', 'repeat_purchase') then resolved_user_id end
+        agg: count_distinct

@@ -1,0 +1,100 @@
+metrics:
+  - name: dau
+    description: Distinct resolved users with any event, queried at daily grain.
+    type: simple
+    label: Daily active users
+    type_params:
+      measure: active_users
+
+  - name: wau
+    description: Distinct resolved users with any event, queried at weekly grain.
+    type: simple
+    label: Weekly active users
+    type_params:
+      measure: active_users
+
+  - name: mau
+    description: Distinct resolved users with any event, queried at monthly grain.
+    type: simple
+    label: Monthly active users
+    type_params:
+      measure: active_users
+
+  - name: new_signups
+    description: Count of signup events from app, subscription, and marketplace objectives.
+    type: simple
+    label: New signups
+    type_params:
+      measure: signup_events
+
+  - name: activated_users
+    description: Distinct users who completed the activation event.
+    type: simple
+    label: Activated users
+    type_params:
+      measure: activated_users
+
+  - name: purchasing_users
+    description: Distinct users with purchase or repeat purchase activity.
+    type: simple
+    label: Purchasing users
+    type_params:
+      measure: purchasing_users
+
+  - name: conversions
+    description: Distinct conversion events across advertiser objectives.
+    type: simple
+    label: Conversions
+    type_params:
+      measure: conversion_count
+
+  - name: conversion_value
+    description: Total canonical conversion value across all conversion types.
+    type: simple
+    label: Conversion value
+    type_params:
+      measure: conversion_value
+
+  - name: total_spend
+    description: Total modeled campaign spend.
+    type: simple
+    label: Total spend
+    type_params:
+      measure: total_spend
+
+  - name: funnel_step_users
+    description: Distinct users completing a funnel step.
+    type: simple
+    label: Funnel step users
+    type_params:
+      measure: funnel_users
+
+  - name: retained_users
+    description: Retained users in a weekly signup cohort cell.
+    type: simple
+    label: Retained users
+    type_params:
+      measure: retained_users
+
+  - name: cohort_users
+    description: Users in the signup cohort.
+    type: simple
+    label: Cohort users
+    type_params:
+      measure: cohort_users
+
+  - name: retention_rate
+    description: Retained users divided by cohort users.
+    type: ratio
+    label: Retention rate
+    type_params:
+      numerator: retained_users
+      denominator: cohort_users
+
+  - name: signup_to_activation_rate
+    description: Activated users divided by new signups.
+    type: ratio
+    label: Signup to activation rate
+    type_params:
+      numerator: activated_users
+      denominator: new_signups

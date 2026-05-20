@@ -1,0 +1,38 @@
+semantic_models:
+  - name: conversions
+    description: Conversion-level semantic model for objective-specific conversion counts and value.
+    model: ref('fact_conversions')
+    defaults:
+      agg_time_dimension: conversion_date
+    entities:
+      - name: conversion
+        type: primary
+        expr: conversion_id
+      - name: user
+        type: foreign
+        expr: resolved_user_id
+      - name: campaign
+        type: foreign
+        expr: campaign_id
+    dimensions:
+      - name: conversion_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: objective
+        type: categorical
+      - name: conversion_type
+        type: categorical
+      - name: conversion_channel
+        type: categorical
+      - name: campaign_id
+        type: categorical
+    measures:
+      - name: conversion_count
+        description: Distinct conversion events across all advertiser objectives.
+        expr: conversion_id
+        agg: count_distinct
+      - name: conversion_value
+        description: Total canonical value of conversion events.
+        expr: conversion_value
+        agg: sum

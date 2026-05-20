@@ -1,4 +1,4 @@
-.PHONY: setup kafka-up kafka-down simulate simulate-dry-run simulate-historical simulate-live stream stream-up stream-down dbt-deps dbt-seed dbt-run dbt-test dbt-docs dashboard test
+.PHONY: setup kafka-up kafka-down simulate simulate-dry-run simulate-historical simulate-live stream stream-up stream-down dbt-deps dbt-seed dbt-run dbt-test dbt-docs mf-validate mf-list mf-query-test dashboard test
 
 setup:
 	uv sync --python 3.13
@@ -49,6 +49,20 @@ dbt-test:
 
 dbt-docs:
 	uv run dotenv -f .env run -- dbt docs generate --project-dir dbt_project --profiles-dir dbt_project
+
+mf-validate:
+	uv run dotenv -f .env run -- dbt parse --project-dir dbt_project --profiles-dir dbt_project --no-partial-parse
+	cd dbt_project && uv run dotenv -f ../.env run -- mf validate-configs
+
+mf-list:
+	uv run dotenv -f .env run -- dbt parse --project-dir dbt_project --profiles-dir dbt_project --no-partial-parse
+	cd dbt_project && uv run dotenv -f ../.env run -- mf list metrics
+
+mf-query-test:
+	uv run dotenv -f .env run -- dbt parse --project-dir dbt_project --profiles-dir dbt_project --no-partial-parse
+	cd dbt_project && uv run dotenv -f ../.env run -- mf query --metrics dau --group-by metric_time --limit 7
+	cd dbt_project && uv run dotenv -f ../.env run -- mf query --metrics attributed_revenue_time_decay --group-by attribution_record_time_decay__channel --limit 10
+	cd dbt_project && uv run dotenv -f ../.env run -- mf query --metrics retention_rate --group-by cohort_week__weeks_since_signup --limit 10
 
 dashboard:
 	@echo "Streamlit dashboard will be implemented in a later phase."
