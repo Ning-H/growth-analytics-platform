@@ -6,6 +6,7 @@ import os
 import re
 import subprocess
 import tempfile
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -33,6 +34,7 @@ def _metricflow_command(*args: str) -> list[str]:
     return ["uv", "run", "dotenv", "-f", str(ENV_PATH), "run", "--", "mf", *args]
 
 
+@lru_cache(maxsize=1)
 def _ensure_semantic_manifest() -> None:
     _run_command(
         [
@@ -55,6 +57,7 @@ def _ensure_semantic_manifest() -> None:
     )
 
 
+@lru_cache(maxsize=1)
 def _load_metric_yaml() -> dict[str, dict[str, Any]]:
     metrics: dict[str, dict[str, Any]] = {}
     for path in sorted(METRICS_DIR.glob("*.yml")):
@@ -71,6 +74,7 @@ def _load_metric_yaml() -> dict[str, dict[str, Any]]:
     return metrics
 
 
+@lru_cache(maxsize=1)
 def _available_dimensions_from_mf() -> dict[str, list[str]]:
     _ensure_semantic_manifest()
     output = _run_command(_metricflow_command("list", "metrics"))
@@ -94,6 +98,7 @@ def _available_dimensions_from_mf() -> dict[str, list[str]]:
     return dimensions
 
 
+@lru_cache(maxsize=1)
 def list_metrics() -> list[dict[str, Any]]:
     """Return the governed metric catalog with visible MetricFlow dimensions."""
     metrics = _load_metric_yaml()

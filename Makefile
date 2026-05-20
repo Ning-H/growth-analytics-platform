@@ -71,7 +71,7 @@ nl-eval:
 	uv run dotenv -f .env run -- python -m nl_interface.eval.run_eval
 
 dashboard:
-	@echo "Streamlit dashboard will be implemented in a later phase."
+	uv run dotenv -f .env run -- streamlit run dashboard/app.py
 
 test:
 	uv run pytest || test $$? -eq 5
