@@ -1,0 +1,168 @@
+seed: 42
+n_users: 10000
+simulation_days: 30
+historical_start_date: "2026-04-01T00:00:00+00:00"
+live_events_per_second: 25
+
+channels:
+  - tiktok_ads
+  - meta_ads
+  - google_ads
+  - email
+  - organic
+  - referral
+
+channel_acquisition_share:
+  tiktok_ads: 0.62
+  meta_ads: 0.12
+  google_ads: 0.10
+  email: 0.05
+  organic: 0.07
+  referral: 0.04
+
+daily_ad_spend_by_channel:
+  tiktok_ads: 8500
+  meta_ads: 1800
+  google_ads: 1500
+  email: 250
+  organic: 0
+  referral: 200
+
+objective_distribution:
+  ecommerce_purchase: 0.28
+  app_install: 0.19
+  lead_generation: 0.16
+  subscription: 0.13
+  marketplace_order: 0.10
+  brand_awareness: 0.06
+  offline_conversion: 0.08
+
+multi_touch_journey_distribution:
+  one_touch: 0.74
+  two_touch: 0.16
+  three_touch: 0.07
+  four_plus_touch: 0.03
+
+time_decay_pattern:
+  click_after_impression_minutes_min: 1
+  click_after_impression_minutes_max: 180
+  conversion_after_click_hours_min: 1
+  conversion_after_click_hours_max: 168
+  repeat_conversion_days_min: 2
+  repeat_conversion_days_max: 21
+
+objective_funnels:
+  app_install:
+    steps:
+      - app_install
+      - signup
+      - activation
+      - purchase
+      - repeat_purchase
+    conversion_rates:
+      impression_to_click: 0.20
+      click_to_app_install: 0.58
+      app_install_to_signup: 0.76
+      signup_to_activation: 0.58
+      activation_to_purchase: 0.30
+      purchase_to_repeat_purchase: 0.35
+    conversion_value_range: [8, 90]
+  ecommerce_purchase:
+    steps:
+      - product_view
+      - add_to_cart
+      - checkout_started
+      - purchase
+      - repeat_purchase
+    conversion_rates:
+      impression_to_click: 0.18
+      click_to_product_view: 0.88
+      product_view_to_add_to_cart: 0.42
+      add_to_cart_to_checkout_started: 0.68
+      checkout_started_to_purchase: 0.52
+      purchase_to_repeat_purchase: 0.28
+    conversion_value_range: [18, 240]
+  lead_generation:
+    steps:
+      - landing_page_view
+      - form_start
+      - lead_submit
+      - qualified_lead
+    conversion_rates:
+      impression_to_click: 0.14
+      click_to_landing_page_view: 0.88
+      landing_page_view_to_form_start: 0.34
+      form_start_to_lead_submit: 0.46
+      lead_submit_to_qualified_lead: 0.42
+    conversion_value_range: [25, 500]
+  subscription:
+    steps:
+      - signup
+      - trial_started
+      - subscription_started
+      - renewal
+    conversion_rates:
+      impression_to_click: 0.15
+      click_to_signup: 0.50
+      signup_to_trial_started: 0.56
+      trial_started_to_subscription_started: 0.32
+      subscription_started_to_renewal: 0.64
+    conversion_value_range: [9, 180]
+  marketplace_order:
+    steps:
+      - signup
+      - search_or_browse
+      - booking_or_order
+      - repeat_order
+    conversion_rates:
+      impression_to_click: 0.14
+      click_to_signup: 0.46
+      signup_to_search_or_browse: 0.68
+      search_or_browse_to_booking_or_order: 0.34
+      booking_or_order_to_repeat_order: 0.31
+    conversion_value_range: [12, 320]
+  brand_awareness:
+    steps:
+      - video_view
+      - engagement
+      - landing_page_view
+    conversion_rates:
+      impression_to_video_view: 0.62
+      video_view_to_engagement: 0.18
+      engagement_to_landing_page_view: 0.12
+    conversion_value_range: [1, 15]
+  offline_conversion:
+    steps:
+      - call_or_directions
+      - offline_conversion
+    conversion_rates:
+      impression_to_click: 0.25
+      click_to_call_or_directions: 0.65
+      call_or_directions_to_offline_conversion: 0.34
+    conversion_value_range: [35, 600]
+
+advertisers:
+  - advertiser_id: adv_shop_001
+    advertiser_name: GlowCart Beauty
+    industry: beauty
+    objectives: [ecommerce_purchase, brand_awareness]
+  - advertiser_id: adv_app_002
+    advertiser_name: LevelUp Games
+    industry: gaming
+    objectives: [app_install, subscription]
+  - advertiser_id: adv_lead_003
+    advertiser_name: SkillBridge Learning
+    industry: education
+    objectives: [lead_generation, subscription]
+  - advertiser_id: adv_market_004
+    advertiser_name: DashLocal
+    industry: marketplace
+    objectives: [marketplace_order, offline_conversion]
+
+audience_segments:
+  - aud_genz_beauty
+  - aud_value_shoppers
+  - aud_mobile_gamers
+  - aud_learning_intent
+  - aud_local_services
+  - aud_broad

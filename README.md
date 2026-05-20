@@ -1,14 +1,16 @@
 # Growth Analytics Platform
 
-Warehouse-first growth analytics for multi-touch attribution, funnel and cohort analysis, and governed natural-language metric discovery.
+Warehouse-first TikTok Ads growth analytics for multi-objective attribution, funnel/cohort analysis, audience quality, and governed natural-language metric discovery.
 
 ## What This Is
 
-Growth Analytics Platform is a portfolio-grade data engineering project that will simulate ad-to-conversion user journeys and turn them into trustworthy growth metrics. The finished system is designed around a modern warehouse-first stack:
+Growth Analytics Platform is a portfolio-grade data engineering project that simulates TikTok Ads advertiser journeys and turns them into trustworthy growth metrics. It supports multiple campaign objectives, including app installs, e-commerce purchases, subscriptions, lead generation, marketplace orders, brand awareness, and offline conversions.
+
+The finished system is designed around a modern warehouse-first stack:
 
 Python simulator -> Kafka -> PySpark Structured Streaming -> BigQuery -> dbt Core + MetricFlow -> OpenAI-powered data discovery -> Streamlit dashboard.
 
-This repository is currently in Phase 0: project scaffolding only. Business logic, dbt models, streaming jobs, and dashboard features will be added in later phases.
+Current status: Phase 2 local simulator and Kafka setup.
 
 ## Architecture
 
@@ -28,9 +30,11 @@ flowchart LR
 ```bash
 make setup
 cp .env.example .env
+make kafka-up
+make simulate-historical
 ```
 
-Later phases will fill in the runnable commands for simulation, streaming, dbt, and the dashboard.
+Kafka UI runs at `http://localhost:8080`.
 
 ## Project Structure
 
