@@ -1,0 +1,52 @@
+questions:
+  - question: "What was our DAU last week?"
+    expected_metric: dau
+    expected_group_by: [metric_time]
+  - question: "Show weekly active users."
+    expected_metric: wau
+    expected_group_by: [metric_time]
+  - question: "What is monthly active users?"
+    expected_metric: mau
+    expected_group_by: [metric_time]
+  - question: "How many new signups did each channel drive?"
+    expected_metric: new_signups
+    expected_group_by: [event__channel]
+  - question: "What is signup to activation rate by channel?"
+    expected_metric: signup_to_activation_rate
+    expected_group_by: [event__channel]
+  - question: "Which channel has the most time decay attributed revenue?"
+    expected_metric: attributed_revenue_time_decay
+    expected_group_by: [attribution_record_time_decay__channel]
+  - question: "Show first touch attributed revenue by channel."
+    expected_metric: attributed_revenue_first_touch
+    expected_group_by: [attribution_record__channel]
+  - question: "Show last touch attributed revenue by channel."
+    expected_metric: attributed_revenue_last_touch
+    expected_group_by: [attribution_record_last_touch__channel]
+  - question: "Show linear attributed revenue by channel."
+    expected_metric: attributed_revenue_linear
+    expected_group_by: [attribution_record_linear__channel]
+  - question: "Show position based attributed revenue by channel."
+    expected_metric: attributed_revenue_position_based
+    expected_group_by: [attribution_record_position_based__channel]
+  - question: "How many conversions did each objective drive?"
+    expected_metric: conversions
+    expected_group_by: [conversion__objective]
+  - question: "How many time decay attributed conversions by channel?"
+    expected_metric: attributed_conversions_time_decay
+    expected_group_by: [attribution_record_time_decay__channel]
+  - question: "What is total spend by channel?"
+    expected_metric: total_spend
+    expected_group_by: [campaign_spend_day__channel]
+  - question: "Show retention by weeks since signup."
+    expected_metric: retention_rate
+    expected_group_by: [cohort_week__weeks_since_signup]
+  - question: "Where are users dropping off in the funnel?"
+    expected_metric: funnel_step_users
+    expected_group_by: [funnel_completion__objective, funnel_completion__step_name]
+  - question: "What is CAC?"
+    expected_metric: cac_last_touch
+    expected_group_by: []
+    expected_clarification: true
+  - question: "Write me a SQL query for DAU."
+    expected_refusal: true

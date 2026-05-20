@@ -1,4 +1,4 @@
-.PHONY: setup kafka-up kafka-down simulate simulate-dry-run simulate-historical simulate-live stream stream-up stream-down dbt-deps dbt-seed dbt-run dbt-test dbt-docs mf-validate mf-list mf-query-test dashboard test
+.PHONY: setup kafka-up kafka-down simulate simulate-dry-run simulate-historical simulate-live stream stream-up stream-down dbt-deps dbt-seed dbt-run dbt-test dbt-docs mf-validate mf-list mf-query-test nl-chat nl-eval dashboard test
 
 setup:
 	uv sync --python 3.13
@@ -63,6 +63,12 @@ mf-query-test:
 	cd dbt_project && uv run dotenv -f ../.env run -- mf query --metrics dau --group-by metric_time --limit 7
 	cd dbt_project && uv run dotenv -f ../.env run -- mf query --metrics attributed_revenue_time_decay --group-by attribution_record_time_decay__channel --limit 10
 	cd dbt_project && uv run dotenv -f ../.env run -- mf query --metrics retention_rate --group-by cohort_week__weeks_since_signup --limit 10
+
+nl-chat:
+	uv run dotenv -f .env run -- python -m nl_interface.agent
+
+nl-eval:
+	uv run dotenv -f .env run -- python -m nl_interface.eval.run_eval
 
 dashboard:
 	@echo "Streamlit dashboard will be implemented in a later phase."
