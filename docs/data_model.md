@@ -2,6 +2,8 @@
 
 This document is the contract for the Growth Analytics Platform. The project is now framed as a configurable TikTok Ads data platform that supports many advertiser/product objectives, not a single hard-coded app funnel.
 
+Implementation baseline: Python 3.13+ for simulator, streaming, orchestration helpers, and later application code.
+
 The platform answers questions like:
 
 - Which TikTok campaigns drive the highest-quality conversions for each advertiser objective?

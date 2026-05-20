@@ -8,9 +8,9 @@ Growth Analytics Platform is a portfolio-grade data engineering project that sim
 
 The finished system is designed around a modern warehouse-first stack:
 
-Python simulator -> Kafka -> PySpark Structured Streaming -> BigQuery -> dbt Core + MetricFlow -> OpenAI-powered data discovery -> Streamlit dashboard.
+Python 3.13+ simulator -> Kafka -> PySpark Structured Streaming -> BigQuery -> dbt Core + MetricFlow -> OpenAI-powered data discovery -> Streamlit dashboard.
 
-Current status: Phase 2 local simulator and Kafka setup.
+Current status: Phase 3 PySpark streaming ingestion to BigQuery bronze.
 
 ## Architecture
 
@@ -32,6 +32,7 @@ make setup
 cp .env.example .env
 make kafka-up
 make simulate-historical
+make stream-up
 ```
 
 Kafka UI runs at `http://localhost:8080`.
