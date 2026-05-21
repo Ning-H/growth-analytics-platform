@@ -18,6 +18,34 @@ METRICS_DIR = DBT_PROJECT_DIR / "models" / "metrics"
 ENV_PATH = REPO_ROOT / ".env"
 
 
+def _bootstrap_environment() -> None:
+    """One-time process-level setup that must run before any subprocess calls.
+
+    Placed here so it fires on import, regardless of which Streamlit page loads
+    first (app.py is only executed when the home page is visited).
+    """
+    # Required for uv on Streamlit Cloud's mounted filesystem, which does not
+    # support hardlinks.
+    os.environ.setdefault("UV_LINK_MODE", "copy")
+
+    # Write GCP credentials to a temp file when only the JSON content is provided
+    # (Streamlit Cloud cannot store files, only env-var strings).
+    json_content = os.getenv("GCP_SERVICE_ACCOUNT_JSON")
+    if json_content:
+        path = os.getenv("GCP_SERVICE_ACCOUNT_JSON_PATH", "")
+        if not path or not Path(path).exists():
+            try:
+                json.loads(json_content)
+            except json.JSONDecodeError:
+                return
+            cred_path = Path(tempfile.gettempdir()) / "gcp_sa.json"
+            cred_path.write_text(json_content)
+            os.environ["GCP_SERVICE_ACCOUNT_JSON_PATH"] = str(cred_path)
+
+
+_bootstrap_environment()
+
+
 class MetricFlowToolError(ValueError):
     """Raised when a requested MetricFlow query is outside the governed catalog."""
 
@@ -46,6 +74,22 @@ def _metricflow_command(*args: str) -> list[str]:
 
 @lru_cache(maxsize=1)
 def _ensure_semantic_manifest() -> None:
+    dbt_packages_dir = DBT_PROJECT_DIR / "dbt_packages"
+    if not dbt_packages_dir.exists() or not any(dbt_packages_dir.iterdir()):
+        _run_command(
+            [
+                "uv",
+                "run",
+                *_dotenv_prefix(),
+                "dbt",
+                "deps",
+                "--project-dir",
+                str(DBT_PROJECT_DIR),
+                "--profiles-dir",
+                str(DBT_PROJECT_DIR),
+            ],
+            cwd=REPO_ROOT,
+        )
     _run_command(
         [
             "uv",
