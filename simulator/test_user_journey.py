@@ -78,4 +78,12 @@ def test_multi_touch_converters_exist_at_expected_rate() -> None:
     summary = summarize_events(events)
 
     assert summary["total_converters"] > 0
-    assert 0.12 <= summary["multi_touch_converter_rate"] <= 0.30
+    assert 0.25 <= summary["multi_touch_converter_rate"] <= 0.50
+
+
+def test_converters_have_cross_channel_touchpoint_paths() -> None:
+    events = generate(CONFIG_PATH, n_users=10000)
+    summary = summarize_events(events)
+
+    assert summary["total_converters"] > 0
+    assert summary["cross_channel_converter_rate"] >= 0.20

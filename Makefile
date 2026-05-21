@@ -1,4 +1,4 @@
-.PHONY: setup kafka-up kafka-down simulate simulate-dry-run simulate-historical simulate-live stream stream-up stream-down dbt-deps dbt-seed dbt-run dbt-test dbt-docs mf-validate mf-list mf-query-test nl-chat nl-eval dashboard test
+.PHONY: setup kafka-up kafka-down simulate simulate-dry-run simulate-historical simulate-live backfill-bigquery stream stream-up stream-down dbt-deps dbt-seed dbt-run dbt-test dbt-docs mf-validate mf-list mf-query-test nl-chat nl-eval dashboard test
 
 setup:
 	uv sync --python 3.13
@@ -20,6 +20,9 @@ simulate-historical:
 
 simulate-live:
 	uv run python -m simulator.events --mode live
+
+backfill-bigquery:
+	uv run dotenv -f .env run -- python scripts/backfill_bigquery.py
 
 stream:
 	$(MAKE) stream-up

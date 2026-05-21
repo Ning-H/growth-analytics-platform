@@ -38,10 +38,16 @@ objective_distribution:
   offline_conversion: 0.08
 
 multi_touch_journey_distribution:
-  one_touch: 0.74
-  two_touch: 0.16
-  three_touch: 0.07
-  four_plus_touch: 0.03
+  one_touch: 0.35
+  two_touch: 0.20
+  three_touch: 0.25
+  four_plus_touch: 0.20
+
+# Share of follow-up touchpoints that intentionally switch channels.
+# This makes attribution analysis meaningful: first-touch, last-touch,
+# linear, time-decay, and position-based models should not all collapse
+# to the same channel totals.
+cross_channel_touchpoint_rate: 0.72
 
 time_decay_pattern:
   click_after_impression_minutes_min: 1

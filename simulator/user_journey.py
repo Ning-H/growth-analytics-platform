@@ -147,15 +147,22 @@ class JourneyGenerator:
         touchpoint_count = self._touchpoint_count()
         latest_at = base_at
         click_id: str | None = None
+        latest_touchpoint_context = context
         for touch_index in range(1, touchpoint_count):
             latest_at += timedelta(minutes=self.rng.randint(2, 3600))
+            latest_touchpoint_context = self._touchpoint_context(
+                context,
+                objective=objective,
+                touch_index=touch_index,
+                touchpoint_count=touchpoint_count,
+            )
             event_type = "video_view" if self.rng.random() < 0.45 else "ad_click"
             if event_type == "video_view":
                 events.append(
                     self._event(
                         "video_view",
                         latest_at,
-                        context,
+                        latest_touchpoint_context,
                         view_id=self._id("view"),
                         watch_seconds=round(self.rng.uniform(2.0, 45.0), 2),
                         video_duration_seconds=self.rng.choice([15, 30, 45, 60]),
@@ -169,16 +176,21 @@ class JourneyGenerator:
                     self._event(
                         "ad_click",
                         latest_at,
-                        context,
+                        latest_touchpoint_context,
                         click_id=click_id,
                         impression_id=impression_id,
-                        destination_url=f"https://example.com/{objective}/{product_id}",
+                        destination_url=f"https://example.com/{objective}/{latest_touchpoint_context['product_id']}",
                         click_type=self.rng.choice(["cta", "product_card", "profile", "lead_form"]),
-                        cost_micros=self._cost_micros(channel, 12000, 95000),
+                        cost_micros=self._cost_micros(latest_touchpoint_context["channel"], 12000, 95000),
                     )
                 )
 
-        funnel_events, user_id = self._objective_events(objective, latest_at, context, click_id)
+        funnel_events, user_id = self._objective_events(
+            objective,
+            latest_at,
+            latest_touchpoint_context,
+            click_id,
+        )
         events.extend(funnel_events)
         if user_id:
             for event in events:
@@ -396,6 +408,97 @@ class JourneyGenerator:
         bucket = weighted_choice(self.config.raw["multi_touch_journey_distribution"], self.rng)
         return {"one_touch": 1, "two_touch": 2, "three_touch": 3, "four_plus_touch": self.rng.randint(4, 6)}[bucket]
 
+    def _touchpoint_context(
+        self,
+        base_context: dict[str, Any],
+        objective: str,
+        touch_index: int,
+        touchpoint_count: int,
+    ) -> dict[str, Any]:
+        """Return a touchpoint context that may intentionally switch channel/campaign.
+
+        Real user journeys often start with an awareness channel and close through search,
+        email, retargeting, or referral. Keeping advertiser/product stable while varying
+        channel and campaign gives attribution models different credit distributions.
+        """
+        context = dict(base_context)
+        cross_channel_rate = float(self.config.raw.get("cross_channel_touchpoint_rate", 0.0))
+        is_closing_touch = touch_index == touchpoint_count - 1
+        should_switch = self.rng.random() < cross_channel_rate
+
+        if should_switch:
+            context["channel"] = self._channel_for_touchpoint(
+                original_channel=base_context["channel"],
+                objective=objective,
+                is_closing_touch=is_closing_touch,
+            )
+
+        if context["channel"] != base_context["channel"] or touch_index > 0:
+            context["campaign_id"] = f"cmp_{objective}_{context['channel']}_{self.rng.randint(1, 12):03d}"
+            context["ad_group_id"] = f"adg_{context['channel']}_{self.rng.randint(1, 30):03d}"
+            context["creative_id"] = f"cr_{objective}_{context['channel']}_{self.rng.randint(1, 50):03d}"
+
+        return context
+
+    def _channel_for_touchpoint(
+        self,
+        original_channel: str,
+        objective: str,
+        is_closing_touch: bool,
+    ) -> str:
+        awareness_weights = {
+            "tiktok_ads": 0.42,
+            "meta_ads": 0.18,
+            "google_ads": 0.12,
+            "email": 0.04,
+            "organic": 0.16,
+            "referral": 0.08,
+        }
+        closing_weights_by_objective = {
+            "ecommerce_purchase": {
+                "tiktok_ads": 0.22,
+                "meta_ads": 0.14,
+                "google_ads": 0.26,
+                "email": 0.20,
+                "organic": 0.10,
+                "referral": 0.08,
+            },
+            "subscription": {
+                "tiktok_ads": 0.20,
+                "meta_ads": 0.12,
+                "google_ads": 0.18,
+                "email": 0.30,
+                "organic": 0.12,
+                "referral": 0.08,
+            },
+            "lead_generation": {
+                "tiktok_ads": 0.18,
+                "meta_ads": 0.14,
+                "google_ads": 0.32,
+                "email": 0.16,
+                "organic": 0.12,
+                "referral": 0.08,
+            },
+            "app_install": {
+                "tiktok_ads": 0.34,
+                "meta_ads": 0.20,
+                "google_ads": 0.18,
+                "email": 0.10,
+                "organic": 0.10,
+                "referral": 0.08,
+            },
+        }
+        weights = closing_weights_by_objective.get(objective, awareness_weights) if is_closing_touch else awareness_weights
+
+        if len(weights) <= 1:
+            return original_channel
+
+        channel = weighted_choice(weights, self.rng)
+        if channel == original_channel:
+            alternatives = [candidate for candidate in weights if candidate != original_channel]
+            return self.rng.choice(alternatives)
+        return channel
+
     def _targeting_tags(self, objective: str) -> list[str]:
         tags = {
             "app_install": ["interest_mobile_apps", "behavior_app_installers"],
@@ -433,6 +536,7 @@ def summarize_events(events: list[dict[str, Any]]) -> dict[str, Any]:
     objective_counts: dict[str, int] = {}
     conversions: list[dict[str, Any]] = []
     touchpoints_by_device: dict[str, list[str]] = {}
+    touchpoint_channels_by_device: dict[str, list[tuple[str, str]]] = {}
 
     conversion_events = {
         "purchase",
@@ -450,10 +554,14 @@ def summarize_events(events: list[dict[str, Any]]) -> dict[str, Any]:
         objective_counts[event["objective"]] = objective_counts.get(event["objective"], 0) + 1
         if event["event_type"] in TOUCHPOINT_EVENTS:
             touchpoints_by_device.setdefault(event["device_id"], []).append(event["event_timestamp"])
+            touchpoint_channels_by_device.setdefault(event["device_id"], []).append(
+                (event["event_timestamp"], event["channel"])
+            )
         if event["event_type"] in conversion_events:
             conversions.append(event)
 
     multi_touch_converters = 0
+    cross_channel_converters = 0
     for conversion in conversions:
         prior_touchpoints = [
             timestamp
@@ -462,12 +570,22 @@ def summarize_events(events: list[dict[str, Any]]) -> dict[str, Any]:
         ]
         if len(prior_touchpoints) >= 3:
             multi_touch_converters += 1
+        prior_channels = {
+            channel
+            for timestamp, channel in touchpoint_channels_by_device.get(conversion["device_id"], [])
+            if timestamp < conversion["event_timestamp"]
+        }
+        if len(prior_channels) >= 2:
+            cross_channel_converters += 1
 
     return {
         "event_counts": event_counts,
         "objective_counts": objective_counts,
         "total_events": len(events),
         "total_converters": len(conversions),
+        "cross_channel_converter_rate": (
+            cross_channel_converters / len(conversions) if conversions else 0.0
+        ),
         "multi_touch_converter_rate": (
             multi_touch_converters / len(conversions) if conversions else 0.0
         ),
