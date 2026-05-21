@@ -22,6 +22,19 @@ METRICS_DIR = DBT_PROJECT_DIR / "models" / "metrics"
 ENV_PATH = REPO_ROOT / ".env"
 
 
+def _safe_path_exists(value: str | None) -> bool:
+    if not value:
+        return False
+    try:
+        return Path(value).expanduser().exists()
+    except OSError:
+        return False
+
+
+def _looks_like_json(value: str | None) -> bool:
+    return bool(value and value.lstrip().startswith("{"))
+
+
 def _bootstrap_environment() -> None:
     """One-time process-level setup that must run before any subprocess calls.
 
@@ -65,9 +78,11 @@ def _bootstrap_environment() -> None:
     # Write GCP credentials to a temp file when only the JSON content is provided
     # (Streamlit Cloud cannot store files, only env-var strings).
     json_content = os.getenv("GCP_SERVICE_ACCOUNT_JSON")
+    path_value = os.getenv("GCP_SERVICE_ACCOUNT_JSON_PATH", "")
+    if not json_content and _looks_like_json(path_value):
+        json_content = path_value
     if json_content:
-        path = os.getenv("GCP_SERVICE_ACCOUNT_JSON_PATH", "")
-        if not path or not Path(path).exists():
+        if not _safe_path_exists(path_value):
             try:
                 json.loads(json_content)
             except json.JSONDecodeError:
@@ -271,8 +286,17 @@ def _extract_sql(explain_output: str) -> str:
 def _bq_client() -> bigquery.Client:
     project = os.getenv("GCP_PROJECT_ID")
     keyfile = os.getenv("GCP_SERVICE_ACCOUNT_JSON_PATH")
-    if keyfile and Path(keyfile).exists():
-        credentials = service_account.Credentials.from_service_account_file(keyfile)
+    if _safe_path_exists(keyfile):
+        credentials = service_account.Credentials.from_service_account_file(str(Path(keyfile).expanduser()))
+        return bigquery.Client(project=project or credentials.project_id, credentials=credentials)
+    json_content = os.getenv("GCP_SERVICE_ACCOUNT_JSON")
+    if not json_content and _looks_like_json(keyfile):
+        json_content = keyfile
+    if json_content:
+        try:
+            credentials = service_account.Credentials.from_service_account_info(json.loads(json_content))
+        except json.JSONDecodeError as exc:
+            raise MetricFlowToolError("GCP service-account JSON secret is not valid JSON.") from exc
         return bigquery.Client(project=project or credentials.project_id, credentials=credentials)
     return bigquery.Client(project=project)
 
