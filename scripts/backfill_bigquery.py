@@ -29,9 +29,13 @@ def require_env(name: str) -> str:
 
 
 def create_client() -> bigquery.Client:
-    credentials = service_account.Credentials.from_service_account_file(
-        require_env("GCP_SERVICE_ACCOUNT_JSON_PATH")
-    )
+    json_content = os.getenv("GCP_SERVICE_ACCOUNT_JSON")
+    if json_content:
+        credentials = service_account.Credentials.from_service_account_info(json.loads(json_content))
+    else:
+        credentials = service_account.Credentials.from_service_account_file(
+            require_env("GCP_SERVICE_ACCOUNT_JSON_PATH")
+        )
     return bigquery.Client(credentials=credentials, project=require_env("GCP_PROJECT_ID"))
 
 

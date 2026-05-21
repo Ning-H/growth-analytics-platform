@@ -137,6 +137,8 @@ def write_batch_to_bigquery(batch_df: DataFrame, batch_id: int) -> None:
 
 def main() -> None:
     load_dotenv(dotenv_path=".env")
+    from utils.gcp_credentials import setup_credentials
+    setup_credentials()
     spark = create_spark()
     bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
 

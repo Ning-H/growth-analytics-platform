@@ -7,6 +7,10 @@ import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from utils.gcp_credentials import setup_credentials
+
+setup_credentials()
+
 from dashboard.components.data import app_stats
 from dashboard.components.layout import configure_page
 

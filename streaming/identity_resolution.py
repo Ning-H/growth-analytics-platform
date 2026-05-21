@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 
@@ -35,8 +36,13 @@ def create_spark() -> SparkSession:
 
 
 def create_bigquery_client() -> bigquery.Client:
-    service_account_path = require_env("GCP_SERVICE_ACCOUNT_JSON_PATH")
-    credentials = service_account.Credentials.from_service_account_file(service_account_path)
+    json_content = os.getenv("GCP_SERVICE_ACCOUNT_JSON")
+    if json_content:
+        credentials = service_account.Credentials.from_service_account_info(json.loads(json_content))
+    else:
+        credentials = service_account.Credentials.from_service_account_file(
+            require_env("GCP_SERVICE_ACCOUNT_JSON_PATH")
+        )
     return bigquery.Client(credentials=credentials, project=require_env("GCP_PROJECT_ID"))
 
 
@@ -123,6 +129,8 @@ def merge_identity_batch(batch_df: DataFrame, batch_id: int) -> None:
 
 def main() -> None:
     load_dotenv(dotenv_path=".env")
+    from utils.gcp_credentials import setup_credentials
+    setup_credentials()
     spark = create_spark()
     bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
 

@@ -30,8 +30,19 @@ def _run_command(args: list[str], cwd: Path = DBT_PROJECT_DIR) -> str:
     return result.stdout
 
 
+def _dotenv_prefix() -> list[str]:
+    """Return the dotenv wrapper when a .env file exists; empty list otherwise.
+
+    On Streamlit Cloud there is no .env file — environment variables are injected
+    directly into the process, so subprocesses inherit them without dotenv.
+    """
+    if ENV_PATH.exists():
+        return ["dotenv", "-f", str(ENV_PATH), "run", "--"]
+    return []
+
+
 def _metricflow_command(*args: str) -> list[str]:
-    return ["uv", "run", "dotenv", "-f", str(ENV_PATH), "run", "--", "mf", *args]
+    return ["uv", "run", *_dotenv_prefix(), "mf", *args]
 
 
 @lru_cache(maxsize=1)
@@ -40,11 +51,7 @@ def _ensure_semantic_manifest() -> None:
         [
             "uv",
             "run",
-            "dotenv",
-            "-f",
-            str(ENV_PATH),
-            "run",
-            "--",
+            *_dotenv_prefix(),
             "dbt",
             "parse",
             "--project-dir",
