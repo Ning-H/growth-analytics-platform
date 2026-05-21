@@ -99,6 +99,7 @@ st.markdown(
         border: 1px solid #e5e7eb;
         border-radius: 10px;
         padding: 18px;
+        color: #15171a;
         background:
           radial-gradient(circle at top left, rgba(37,244,238,.16), transparent 30%),
           radial-gradient(circle at bottom right, rgba(254,44,85,.13), transparent 32%),
@@ -136,6 +137,23 @@ st.markdown(
         display: grid;
         grid-template-columns: 1fr;
         gap: 10px;
+      }
+      .arch-scroll {
+        max-height: 560px;
+        overflow-y: auto;
+        padding: 2px 10px 2px 2px;
+        border-radius: 8px;
+        scrollbar-color: #25F4EE #f3f4f6;
+        scrollbar-width: thin;
+      }
+      .arch-scroll::-webkit-scrollbar { width: 10px; }
+      .arch-scroll::-webkit-scrollbar-track {
+        background: #f3f4f6;
+        border-radius: 999px;
+      }
+      .arch-scroll::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #25F4EE, #FE2C55);
+        border-radius: 999px;
       }
       .arch-node {
         position: relative;
@@ -216,7 +234,7 @@ st.markdown(
         transition: max-height .18s ease, padding .18s ease, border-width .18s ease;
       }
       .arch-node:hover .arch-details {
-        max-height: 92px;
+        max-height: 150px;
         padding: 10px 12px;
         border-width: 1px;
       }
@@ -238,6 +256,7 @@ st.markdown(
         .arch-node {
           grid-template-columns: 42px 1fr;
         }
+        .arch-scroll { max-height: 620px; }
         .io, .arch-stat, .arch-details {
           grid-column: 2 / 3;
         }
@@ -251,6 +270,8 @@ st.markdown(
         </div>
         <div class="arch-pill">Hover on a step for details</div>
       </div>
+      <div class="arch-caption" style="margin: -4px 0 12px 0;">Scroll inside this box to follow the pipeline from source data to dashboard.</div>
+      <div class="arch-scroll">
       <div class="pipeline">
         <div class="arch-node">
           <div class="step-num">1</div>
@@ -259,8 +280,8 @@ st.markdown(
             <div class="arch-sub">App, commerce, lead, subscription, marketplace, awareness, offline.</div>
           </div>
           <div class="io"><b>Input:</b> campaign objective rules<br><b>Output:</b> objective-specific funnel definitions</div>
-          <div class="arch-stat">7 objectives</div>
-          <div class="arch-details">The model supports different growth outcomes instead of forcing every product through the same app-install funnel.</div>
+          <div class="arch-stat" title="app_install, ecommerce_purchase, lead_generation, subscription, marketplace_order, brand_awareness, offline_conversion">7 objectives</div>
+          <div class="arch-details">Objectives: app install, ecommerce purchase, lead generation, subscription, marketplace order, brand awareness, and offline conversion. Each objective has its own funnel steps and conversion rates.</div>
         </div>
         <div class="flow-arrow">↓</div>
         <div class="arch-node red">
@@ -270,8 +291,8 @@ st.markdown(
             <div class="arch-sub">Synthetic user paths across channels, campaigns, devices, countries, and conversion values.</div>
           </div>
           <div class="io"><b>Input:</b> simulator config + seeded random behavior<br><b>Output:</b> chronological user events</div>
-          <div class="arch-stat">10k users / 30 days</div>
-          <div class="arch-details">The dummy data is generated from configurable conversion rates, objective distribution, channel shares, ad spend, and time gaps between touchpoints.</div>
+          <div class="arch-stat" title="10,000 simulated users over a 30-day historical window">10k users / 30 days</div>
+          <div class="arch-details">The dummy data is generated from configurable conversion rates, objective distribution, channel shares, ad spend, time gaps, and cross-channel touchpoint behavior.</div>
         </div>
         <div class="flow-arrow">↓</div>
         <div class="arch-node">
@@ -281,8 +302,8 @@ st.markdown(
             <div class="arch-sub">Topics for impressions, clicks, installs, signups, purchases, leads, and more.</div>
           </div>
           <div class="io"><b>Input:</b> generated events<br><b>Output:</b> raw event topics by event family</div>
-          <div class="arch-stat">event-level raw data</div>
-          <div class="arch-details">Kafka represents the streaming boundary: producers emit raw events, and downstream jobs process the same log into warehouse tables.</div>
+          <div class="arch-stat" title="Topics include impressions, video views, clicks, engagements, landing pages, installs, signups, activations, commerce, leads, subscriptions, marketplace, and offline conversions.">13 topics</div>
+          <div class="arch-details">Topics include ad impressions, video views, clicks, engagements, landing page views, app installs, signups, activations, commerce, leads, subscriptions, marketplace, and offline conversions.</div>
         </div>
         <div class="flow-arrow">↓</div>
         <div class="arch-node black">
@@ -292,7 +313,7 @@ st.markdown(
             <div class="arch-sub">Parse JSON, enforce schemas, add ingestion metadata, and checkpoint offsets.</div>
           </div>
           <div class="io"><b>Input:</b> Kafka topics<br><b>Output:</b> parsed bronze-ready event frames</div>
-          <div class="arch-stat">streaming ingestion</div>
+          <div class="arch-stat" title="Structured Streaming parses schemas, keeps Kafka offsets, adds metadata, and writes recoverably.">streaming ingestion</div>
           <div class="arch-details">Spark handles schema enforcement, event timestamps, Kafka offsets, and the deterministic device-to-user identity mapping job.</div>
         </div>
         <div class="flow-arrow">↓</div>
@@ -303,7 +324,7 @@ st.markdown(
             <div class="arch-sub">Raw warehouse tables preserve event payloads and ingestion metadata.</div>
           </div>
           <div class="io"><b>Input:</b> parsed Spark streams<br><b>Output:</b> partitioned raw event tables</div>
-          <div class="arch-stat">growth_raw</div>
+          <div class="arch-stat" title="Raw BigQuery dataset: bronze_events_union plus per-event-family bronze tables and device_to_user mapping.">growth_raw</div>
           <div class="arch-details">Bronze is intentionally close to source data. It supports backfills, schema checks, and row-count reconciliation against Kafka.</div>
         </div>
         <div class="flow-arrow">↓</div>
@@ -314,8 +335,8 @@ st.markdown(
             <div class="arch-sub">Clean events, resolve users, build sessions, facts, dimensions, funnels, cohorts.</div>
           </div>
           <div class="io"><b>Input:</b> bronze tables<br><b>Output:</b> analysis-ready dbt marts</div>
-          <div class="arch-stat">15+ marts</div>
-          <div class="arch-details">This layer turns raw events into analysis-ready warehouse models: touchpoints, conversions, user events, campaigns, users, attribution, funnel, and cohort tables.</div>
+          <div class="arch-stat" title="Includes staging, unified events, identity resolution, sessions, user/campaign/channel/date dimensions, touchpoints, conversions, user events, attribution, funnel, and cohort marts.">15+ marts</div>
+          <div class="arch-details">Models include staging, unified events, identity resolution, sessions, user/campaign/channel/date dimensions, touchpoints, conversions, user events, attribution, funnel, and cohort tables.</div>
         </div>
         <div class="flow-arrow">↓</div>
         <div class="arch-node">
@@ -325,8 +346,8 @@ st.markdown(
             <div class="arch-sub">First-touch, last-touch, linear, time-decay, and position-based rules.</div>
           </div>
           <div class="io"><b>Input:</b> touchpoints + conversions<br><b>Output:</b> credited revenue and conversion facts</div>
-          <div class="arch-stat">5 models</div>
-          <div class="arch-details">Each model assigns conversion credit differently, then validates that credit fractions sum to one per conversion.</div>
+          <div class="arch-stat" title="first-touch, last-touch, linear, time-decay, position-based">5 models</div>
+          <div class="arch-details">Attribution models: first-touch, last-touch, linear, 7-day half-life time-decay, and 40/20/40 position-based. Tests validate credit sums to one per conversion.</div>
         </div>
         <div class="flow-arrow">↓</div>
         <div class="arch-node black">
@@ -336,8 +357,8 @@ st.markdown(
             <div class="arch-sub">Canonical DAU, CAC, ROAS, retention, attributed revenue, and funnel conversion.</div>
           </div>
           <div class="io"><b>Input:</b> dbt marts<br><b>Output:</b> reusable metric definitions</div>
-          <div class="arch-stat">34 metrics</div>
-          <div class="arch-details">MetricFlow prevents metric drift by defining business meaning and query logic in governed YAML instead of ad hoc dashboard SQL.</div>
+          <div class="arch-stat" title="Includes DAU, WAU, MAU, signups, conversions, conversion value, spend, retention, CAC, ROAS, and attributed revenue variants.">34 metrics</div>
+          <div class="arch-details">Metrics include active users, signups, conversions, conversion value, spend, retention, CAC, ROAS, attributed conversions, and attributed revenue by model.</div>
         </div>
         <div class="flow-arrow">↓</div>
         <div class="arch-node">
@@ -347,7 +368,7 @@ st.markdown(
             <div class="arch-sub">OpenAI selects governed metrics rather than inventing raw SQL.</div>
           </div>
           <div class="io"><b>Input:</b> analyst question + metric catalog<br><b>Output:</b> MetricFlow query and auditable SQL</div>
-          <div class="arch-stat">auditable SQL</div>
+          <div class="arch-stat" title="The assistant returns the governed metric, data preview, and generated MetricFlow SQL.">auditable SQL</div>
           <div class="arch-details">The assistant routes natural language to MetricFlow queries and exposes generated SQL so the answer can be inspected.</div>
         </div>
         <div class="flow-arrow">↓</div>
@@ -358,9 +379,10 @@ st.markdown(
             <div class="arch-sub">Attribution comparison, funnel/cohort analysis, and natural-language exploration.</div>
           </div>
           <div class="io"><b>Input:</b> governed metrics and generated SQL<br><b>Output:</b> product analytics decisions</div>
-          <div class="arch-stat">3 workflows</div>
-          <div class="arch-details">The dashboard is the product surface for growth teams to diagnose budget allocation, drop-off, retention, and metric questions.</div>
+          <div class="arch-stat" title="Attribution comparison, funnel and cohort analysis, Ask The Data.">3 workflows</div>
+          <div class="arch-details">Workflows: Attribution Comparison for channel credit, Funnel and Cohort for drop-off and retention, and Ask The Data for governed natural-language exploration.</div>
         </div>
+      </div>
       </div>
       <div class="arch-caption">The sequence runs top to bottom. Hover over any step to expand implementation details.</div>
     </div>
@@ -390,22 +412,55 @@ with highlight_cols[1]:
     )
 
 st.subheader("Explore The Product")
+st.markdown(
+    """
+    <style>
+      .product-button {
+        display: inline-block;
+        margin-top: 10px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        background: #010101;
+        color: #ffffff !important;
+        font-weight: 800;
+        text-decoration: none !important;
+        border: 1px solid #010101;
+        box-shadow: 4px 4px 0 #25F4EE;
+        transition: transform .14s ease, box-shadow .14s ease;
+      }
+      .product-button:hover {
+        transform: translate(2px, 2px);
+        box-shadow: 2px 2px 0 #FE2C55;
+      }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 workflow = st.tabs(["1. Diagnose channel credit", "2. Find funnel drop-off", "3. Ask governed metrics"])
 with workflow[0]:
     st.markdown(
         "Compare channel revenue under different attribution rules and see whether model choice changes the story."
     )
-    st.page_link("pages/1_Attribution_Comparison.py", label="Open Attribution Comparison")
+    st.markdown(
+        '<a class="product-button" href="/Attribution_Comparison" target="_self">Open Attribution Comparison</a>',
+        unsafe_allow_html=True,
+    )
 with workflow[1]:
     st.markdown(
         "Review objective-level funnel completion and weekly cohort retention to understand where users drop off."
     )
-    st.page_link("pages/2_Funnel_and_Cohort.py", label="Open Funnel and Cohort")
+    st.markdown(
+        '<a class="product-button" href="/Funnel_and_Cohort" target="_self">Open Funnel and Cohort</a>',
+        unsafe_allow_html=True,
+    )
 with workflow[2]:
     st.markdown(
         "Ask questions against governed MetricFlow metrics and inspect the generated SQL for auditability."
     )
-    st.page_link("pages/3_Ask_The_Data.py", label="Open Ask The Data")
+    st.markdown(
+        '<a class="product-button" href="/Ask_The_Data" target="_self">Open Ask The Data</a>',
+        unsafe_allow_html=True,
+    )
 
 st.info(
     "Design principle: the natural-language assistant uses governed MetricFlow metrics instead of free-form text-to-SQL, "

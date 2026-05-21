@@ -67,6 +67,7 @@ def apply_theme() -> None:
         }
         .panel {
             background: #ffffff;
+            color: var(--tt-ink);
             border: 1px solid var(--tt-line);
             border-radius: 8px;
             padding: 16px 18px;
@@ -74,6 +75,7 @@ def apply_theme() -> None:
             box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
         }
         .panel h3 {
+            color: var(--tt-ink);
             margin-top: 0;
             margin-bottom: 8px;
         }
