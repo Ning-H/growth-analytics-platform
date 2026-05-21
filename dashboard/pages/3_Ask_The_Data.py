@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -54,8 +55,18 @@ if question:
         st.markdown(question)
 
     with st.chat_message("assistant"):
-        with st.spinner("Querying governed metrics..."):
+        with st.status("Working on your question...", expanded=True) as status:
+            st.write("Interpreting the business question")
+            time.sleep(0.2)
+            st.write("Selecting the governed MetricFlow metric")
+            time.sleep(0.2)
+            st.write("Running the warehouse-backed MetricFlow query")
             result = ask_agent(question, use_openai=use_openai)
+            if result.get("underlying_sql"):
+                st.write("Preparing chart and audit SQL")
+            if use_openai:
+                st.write("Synthesizing the business-language answer")
+            status.update(label="Answer ready", state="complete", expanded=False)
         st.markdown(result["answer"])
         if result.get("data_preview"):
             frame = pd.DataFrame(result["data_preview"])

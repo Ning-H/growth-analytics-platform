@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 from typing import Any
 
@@ -98,6 +97,18 @@ def revenue_by_model() -> pd.DataFrame:
     if not frames:
         return pd.DataFrame(columns=["model", "channel", "revenue"])
     return pd.concat(frames, ignore_index=True)
+
+
+def available_values(frame: pd.DataFrame, column: str) -> list[str]:
+    if frame.empty or column not in frame.columns:
+        return []
+    return sorted(str(value) for value in frame[column].dropna().unique())
+
+
+def filter_by_values(frame: pd.DataFrame, column: str, values: list[str]) -> pd.DataFrame:
+    if not values or frame.empty or column not in frame.columns:
+        return frame
+    return frame[frame[column].astype(str).isin(values)]
 
 
 def app_stats() -> dict[str, str]:

@@ -8,7 +8,7 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from dashboard.components.charts import funnel_table, retention_pivot
-from dashboard.components.data import metric_query
+from dashboard.components.data import available_values, metric_query
 from dashboard.components.layout import configure_page, page_intro, show_sql
 
 
@@ -18,16 +18,14 @@ page_intro(
     "Track objective-specific drop-off and how weekly signup cohorts retain after acquisition.",
 )
 
-objective = st.sidebar.selectbox(
-    "Objective",
-    ["All", "app_install", "ecommerce_purchase", "lead_generation", "subscription", "marketplace", "offline_sales"],
-)
+st.sidebar.caption("Filters are populated from the data returned by MetricFlow.")
 
-funnel_result = metric_query(
-    "funnel_step_users",
-    ("funnel_completion__objective", "funnel_completion__step_name"),
-    limit=200,
-)
+with st.spinner("Loading funnel completion metrics..."):
+    funnel_result = metric_query(
+        "funnel_step_users",
+        ("funnel_completion__objective", "funnel_completion__step_name"),
+        limit=200,
+    )
 if funnel_result.error:
     st.error(funnel_result.error)
 else:
@@ -38,8 +36,14 @@ else:
             "funnel_step_users": "users",
         }
     )
-    if objective != "All":
-        funnel = funnel[funnel["objective"] == objective]
+    objective_options = ["All", *available_values(funnel, "objective")]
+    selected_objective = st.sidebar.selectbox(
+        "Objective",
+        objective_options,
+        help="These options come from the current query result.",
+    )
+    if selected_objective != "All":
+        funnel = funnel[funnel["objective"].astype(str) == selected_objective]
 
     st.subheader("Funnel Step Completion")
     prepared = funnel_table(funnel, "objective", "step", "users")
@@ -65,11 +69,12 @@ else:
 
 st.divider()
 st.subheader("Weekly Cohort Retention")
-retention_result = metric_query(
-    "retention_rate",
-    ("cohort_week__signup_week", "cohort_week__weeks_since_signup"),
-    limit=200,
-)
+with st.spinner("Loading weekly cohort retention..."):
+    retention_result = metric_query(
+        "retention_rate",
+        ("cohort_week__signup_week", "cohort_week__weeks_since_signup"),
+        limit=200,
+    )
 if retention_result.error:
     st.error(retention_result.error)
 else:

@@ -23,6 +23,9 @@ def apply_theme() -> None:
             padding-bottom: 3rem;
             max-width: 1240px;
         }
+        h1, h2, h3 {
+            letter-spacing: 0;
+        }
         [data-testid="stMetric"] {
             background: #f7f9fb;
             border: 1px solid #dce5ef;
@@ -55,6 +58,25 @@ def apply_theme() -> None:
             padding: 16px 18px;
             margin: 8px 0 16px 0;
         }
+        .panel h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+        .problem {
+            background: #f7f9fb;
+            border-left: 4px solid #0f766e;
+            padding: 18px 20px;
+            margin: 16px 0 20px 0;
+            border-radius: 6px;
+        }
+        .label {
+            color: #0f766e;
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
         .quiet {
             color: #5f6f82;
             font-size: 0.94rem;
@@ -78,4 +100,3 @@ def show_sql(sql: str) -> None:
         return
     with st.expander("View underlying MetricFlow SQL"):
         st.code(sql, language="sql")
-
