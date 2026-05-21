@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
+
+# Tell uv to copy files instead of hardlinking — required on Streamlit Cloud's filesystem.
+os.environ.setdefault("UV_LINK_MODE", "copy")
 
 import streamlit as st
 
