@@ -12,20 +12,39 @@ from dashboard.components.data import available_values, metric_query
 from dashboard.components.layout import configure_page, page_intro, show_sql
 
 
+OBJECTIVE_OPTIONS = [
+    "All",
+    "app_install",
+    "brand_awareness",
+    "ecommerce_purchase",
+    "lead_generation",
+    "marketplace_order",
+    "offline_conversion",
+    "subscription",
+]
+
+
 configure_page("Funnel and Cohort")
 page_intro(
     "Funnel and Cohort",
     "Track objective-specific drop-off and how weekly signup cohorts retain after acquisition.",
 )
 
-st.sidebar.caption("Filters are populated from the data returned by MetricFlow.")
+selected_objective = st.sidebar.selectbox(
+    "Objective",
+    OBJECTIVE_OPTIONS,
+    help="Choose one growth objective, or keep All to compare every objective in the funnel table.",
+)
+st.sidebar.caption("The filter is applied after the governed MetricFlow query returns.")
 
-with st.spinner("Loading funnel completion metrics..."):
+with st.status("Loading funnel completion metrics...", expanded=False) as funnel_status:
+    st.write("Querying governed funnel_step_users metric")
     funnel_result = metric_query(
         "funnel_step_users",
         ("funnel_completion__objective", "funnel_completion__step_name"),
         limit=200,
     )
+    funnel_status.update(label="Funnel metrics loaded", state="complete", expanded=False)
 if funnel_result.error:
     st.error(funnel_result.error)
 else:
@@ -36,12 +55,9 @@ else:
             "funnel_step_users": "users",
         }
     )
-    objective_options = ["All", *available_values(funnel, "objective")]
-    selected_objective = st.sidebar.selectbox(
-        "Objective",
-        objective_options,
-        help="These options come from the current query result.",
-    )
+    returned_objectives = set(available_values(funnel, "objective"))
+    if selected_objective != "All" and selected_objective not in returned_objectives:
+        st.warning(f"No funnel rows were returned for `{selected_objective}`.")
     if selected_objective != "All":
         funnel = funnel[funnel["objective"].astype(str) == selected_objective]
 
@@ -50,8 +66,10 @@ else:
     if prepared.empty:
         st.info("No funnel rows returned.")
     else:
-        first_objective = prepared["objective"].iloc[0]
-        chart_frame = prepared[prepared["objective"] == first_objective].set_index("step")["users"]
+        if selected_objective == "All":
+            chart_frame = prepared.groupby("step", as_index=True)["users"].sum().sort_values(ascending=False)
+        else:
+            chart_frame = prepared.set_index("step")["users"]
         st.bar_chart(chart_frame, use_container_width=True)
         st.dataframe(
             prepared.assign(
@@ -69,12 +87,14 @@ else:
 
 st.divider()
 st.subheader("Weekly Cohort Retention")
-with st.spinner("Loading weekly cohort retention..."):
+with st.status("Loading weekly cohort retention...", expanded=False) as retention_status:
+    st.write("Querying governed retention_rate metric")
     retention_result = metric_query(
         "retention_rate",
         ("cohort_week__signup_week", "cohort_week__weeks_since_signup"),
         limit=200,
     )
+    retention_status.update(label="Retention metrics loaded", state="complete", expanded=False)
 if retention_result.error:
     st.error(retention_result.error)
 else:
