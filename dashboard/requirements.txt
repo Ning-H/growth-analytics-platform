@@ -1,0 +1,10 @@
+streamlit
+pandas
+altair
+pyyaml
+python-dotenv
+openai
+google-cloud-bigquery
+dbt-core
+dbt-bigquery
+dbt-metricflow

@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import json
 import os
+import shutil
 import subprocess
 import tempfile
 from functools import lru_cache
@@ -10,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from dotenv import load_dotenv
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -27,6 +29,36 @@ def _bootstrap_environment() -> None:
     # Required for uv on Streamlit Cloud's mounted filesystem, which does not
     # support hardlinks.
     os.environ.setdefault("UV_LINK_MODE", "copy")
+
+    if ENV_PATH.exists():
+        load_dotenv(ENV_PATH, override=False)
+
+    # Streamlit Cloud exposes root-level secrets as env vars. This fallback also
+    # supports nested secrets if the user pasted a TOML table for readability.
+    try:
+        import streamlit as st
+
+        for key in (
+            "GCP_PROJECT_ID",
+            "BIGQUERY_DATASET_RAW",
+            "BIGQUERY_DATASET_ANALYTICS",
+            "OPENAI_API_KEY",
+            "OPENAI_MODEL",
+        ):
+            value = st.secrets.get(key)
+            if value and not os.getenv(key):
+                os.environ[key] = str(value)
+
+        if not os.getenv("GCP_SERVICE_ACCOUNT_JSON"):
+            service_account = st.secrets.get("GCP_SERVICE_ACCOUNT_JSON")
+            if service_account:
+                os.environ["GCP_SERVICE_ACCOUNT_JSON"] = str(service_account)
+            elif "gcp_service_account" in st.secrets:
+                os.environ["GCP_SERVICE_ACCOUNT_JSON"] = json.dumps(dict(st.secrets["gcp_service_account"]))
+    except Exception:
+        # CLI use, local tests, and imports outside Streamlit should not depend
+        # on Streamlit's secrets runtime being present.
+        pass
 
     # Write GCP credentials to a temp file when only the JSON content is provided
     # (Streamlit Cloud cannot store files, only env-var strings).
@@ -68,8 +100,23 @@ def _dotenv_prefix() -> list[str]:
     return []
 
 
+def _tool_command(tool: str, *args: str) -> list[str]:
+    """Build a command that works both locally and on Streamlit Cloud.
+
+    Local development usually runs the app through `uv run`, while Streamlit
+    Cloud installs dependencies into its own environment. In Cloud, `mf` and
+    `dbt` should be called directly from PATH instead of assuming `uv` exists at
+    app runtime.
+    """
+    if shutil.which(tool):
+        return [tool, *args]
+    if shutil.which("uv"):
+        return ["uv", "run", *_dotenv_prefix(), tool, *args]
+    return [tool, *args]
+
+
 def _metricflow_command(*args: str) -> list[str]:
-    return ["uv", "run", *_dotenv_prefix(), "mf", *args]
+    return _tool_command("mf", *args)
 
 
 @lru_cache(maxsize=1)
@@ -77,24 +124,18 @@ def _ensure_semantic_manifest() -> None:
     dbt_packages_dir = DBT_PROJECT_DIR / "dbt_packages"
     if not dbt_packages_dir.exists() or not any(dbt_packages_dir.iterdir()):
         _run_command(
-            [
-                "uv",
-                "run",
-                *_dotenv_prefix(),
+            _tool_command(
                 "dbt",
                 "deps",
                 "--project-dir",
                 str(DBT_PROJECT_DIR),
                 "--profiles-dir",
                 str(DBT_PROJECT_DIR),
-            ],
+            ),
             cwd=REPO_ROOT,
         )
     _run_command(
-        [
-            "uv",
-            "run",
-            *_dotenv_prefix(),
+        _tool_command(
             "dbt",
             "parse",
             "--project-dir",
@@ -102,7 +143,7 @@ def _ensure_semantic_manifest() -> None:
             "--profiles-dir",
             str(DBT_PROJECT_DIR),
             "--no-partial-parse",
-        ],
+        ),
         cwd=REPO_ROOT,
     )
 
