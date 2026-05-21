@@ -17,8 +17,8 @@ configure_page("Home")
 st.markdown(
     """
     <div class="hero">
-      <h1>TikTok Ads Growth Analytics Platform</h1>
-      <p>Measure which ads, channels, and campaign objectives actually drive users from first
+      <h1>Growth Analytics Platform</h1>
+      <p>Measure which campaigns, channels, and customer journeys actually drive users from first
       exposure to conversion across app installs, ecommerce purchases, subscriptions, leads,
       marketplace actions, awareness, and offline sales.</p>
     </div>
@@ -30,13 +30,25 @@ st.markdown(
     """
     <div class="problem">
       <div class="label">Problem statement</div>
-      TikTok advertisers do not all share one clean funnel. A mobile app campaign may need
+      Growth teams rarely have one clean funnel. A mobile app campaign may need
       impression → click → install → signup → activation → purchase. An ecommerce campaign may
       skip install and go directly from ad click to product page to purchase. Lead-gen,
       subscription, marketplace, awareness, and offline-sales campaigns each create different
       conversion paths. This platform simulates those raw journeys, resolves identity, builds
       warehouse models, and lets growth teams compare attribution, funnel drop-off, cohorts,
       CAC, ROAS, and governed metric answers.
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    """
+    <div class="panel">
+      <div class="label">Example scenario</div>
+      This demo uses TikTok-style paid media journeys as the example event source, but the
+      architecture applies to any growth platform, advertiser dataset, marketplace, ecommerce
+      business, subscription product, or app-install funnel.
     </div>
     """,
     unsafe_allow_html=True,
@@ -52,7 +64,7 @@ flow_cols = st.columns(4)
 flow_cards = [
     (
         "Data generated",
-        "A Python simulator creates synthetic TikTok Ads journeys for multiple advertiser objectives, channels, campaigns, devices, countries, and conversion types.",
+        "A Python simulator creates synthetic paid-media journeys for multiple objectives, channels, campaigns, devices, countries, and conversion types.",
     ),
     (
         "Raw event stream",
@@ -175,7 +187,7 @@ components.html(
           <div class="arch-title">Advertiser Objectives</div>
           <div class="arch-sub">App, commerce, lead, subscription, marketplace, awareness, offline.</div>
           <div class="arch-stat">7 objectives</div>
-          <div class="arch-details">The model supports different TikTok ad outcomes instead of forcing every product through the same app-install funnel.</div>
+          <div class="arch-details">The model supports different growth outcomes instead of forcing every product through the same app-install funnel.</div>
         </div>
         <div class="arch-node red">
           <div class="arch-title">Synthetic Journey Simulator</div>
@@ -244,7 +256,7 @@ highlight_cols = st.columns(2)
 with highlight_cols[0]:
     st.markdown(
         """
-        - Models multiple TikTok advertiser objectives instead of assuming every product has the same funnel.
+        - Models multiple growth objectives instead of assuming every product has the same funnel.
         - Preserves raw event streams before transforming them into analysis-ready warehouse tables.
         - Resolves anonymous device behavior into user-level journeys after signup or conversion.
         - Separates attribution, funnel, cohort, and spend logic so each analysis has a clear source table.
