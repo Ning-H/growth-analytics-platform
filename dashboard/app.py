@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -78,92 +79,206 @@ for col, (title, body) in zip(flow_cols, flow_cards, strict=True):
             unsafe_allow_html=True,
         )
 
-st.subheader("Architecture")
-st.graphviz_chart(
+st.subheader("Interactive Architecture")
+components.html(
     """
-    digraph {
-      graph [rankdir=LR, bgcolor="transparent", pad=0.2, nodesep=0.45, ranksep=0.65]
-      node [shape=box, style="rounded,filled", color="#b9c9d8", fillcolor="#f7f9fb", fontname="Helvetica", fontsize=11]
-      edge [color="#67839b"]
-      Objectives [label="Advertiser objectives\\napp, commerce, lead, subscription, marketplace, offline"]
-      Simulator [label="Python simulator\\nsynthetic TikTok Ads journeys"]
-      Events [label="Event taxonomy\\nimpression, click, install, signup, activation, purchase"]
-      Kafka [label="Kafka\\nraw event topics"]
-      Spark [label="PySpark\\nstream parsing + bronze ingestion"]
-      Bronze [label="BigQuery bronze\\nraw event tables"]
-      dbt [label="dbt silver/gold\\nresolved users, sessions, facts, dims"]
-      Attribution [label="Attribution marts\\nfirst, last, linear, time decay, position"]
-      MetricFlow [label="MetricFlow\\nDAU, CAC, ROAS, retention, revenue"]
-      OpenAI [label="OpenAI agent\\ngoverned text-to-metric"]
-      Dashboard [label="Streamlit\\nportfolio demo"]
-      Objectives -> Simulator -> Events -> Kafka -> Spark -> Bronze -> dbt
-      dbt -> Attribution -> MetricFlow
-      dbt -> MetricFlow
-      MetricFlow -> Dashboard
-      MetricFlow -> OpenAI -> Dashboard
-    }
+    <style>
+      body { margin: 0; font-family: Inter, Arial, sans-serif; color: #15171a; }
+      .arch-wrap {
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 18px;
+        background:
+          radial-gradient(circle at top left, rgba(37,244,238,.16), transparent 30%),
+          radial-gradient(circle at bottom right, rgba(254,44,85,.13), transparent 32%),
+          #ffffff;
+      }
+      .arch-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(150px, 1fr));
+        gap: 14px;
+        align-items: stretch;
+      }
+      .arch-node {
+        position: relative;
+        min-height: 118px;
+        border: 1px solid #d9dee7;
+        border-top: 4px solid #25F4EE;
+        border-radius: 8px;
+        padding: 13px 13px 12px 13px;
+        background: rgba(255,255,255,.94);
+        box-shadow: 0 8px 22px rgba(16,24,40,.06);
+        transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+      }
+      .arch-node:hover {
+        transform: translateY(-3px);
+        border-color: #25F4EE;
+        box-shadow: 0 14px 30px rgba(16,24,40,.12);
+        z-index: 5;
+      }
+      .arch-node.red { border-top-color: #FE2C55; }
+      .arch-node.black { border-top-color: #010101; }
+      .arch-title {
+        font-size: 14px;
+        font-weight: 800;
+        margin-bottom: 7px;
+      }
+      .arch-sub {
+        color: #667085;
+        font-size: 12px;
+        line-height: 1.35;
+      }
+      .arch-stat {
+        display: inline-block;
+        margin-top: 10px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: #f3f4f6;
+        color: #111827;
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .arch-details {
+        display: none;
+        position: absolute;
+        left: 10px;
+        right: 10px;
+        top: calc(100% - 8px);
+        padding: 11px 12px;
+        border: 1px solid #dbeafe;
+        border-radius: 8px;
+        background: #ffffff;
+        color: #374151;
+        font-size: 12px;
+        line-height: 1.42;
+        box-shadow: 0 12px 28px rgba(16,24,40,.16);
+      }
+      .arch-node:hover .arch-details { display: block; }
+      .flow-arrow {
+        text-align: center;
+        color: #98a2b3;
+        font-size: 18px;
+        padding: 4px 0;
+      }
+      .arch-caption {
+        margin-top: 14px;
+        color: #667085;
+        font-size: 12px;
+      }
+      @media (max-width: 900px) {
+        .arch-grid { grid-template-columns: repeat(2, minmax(150px, 1fr)); }
+      }
+    </style>
+    <div class="arch-wrap">
+      <div class="arch-grid">
+        <div class="arch-node">
+          <div class="arch-title">Advertiser Objectives</div>
+          <div class="arch-sub">App, commerce, lead, subscription, marketplace, awareness, offline.</div>
+          <div class="arch-stat">7 objectives</div>
+          <div class="arch-details">The model supports different TikTok ad outcomes instead of forcing every product through the same app-install funnel.</div>
+        </div>
+        <div class="arch-node red">
+          <div class="arch-title">Synthetic Journey Simulator</div>
+          <div class="arch-sub">Creates user paths with channels, campaigns, devices, countries, and conversion values.</div>
+          <div class="arch-stat">10k users / 30 days</div>
+          <div class="arch-details">The dummy data is generated from configurable conversion rates, objective distribution, channel shares, ad spend, and time gaps between touchpoints.</div>
+        </div>
+        <div class="arch-node">
+          <div class="arch-title">Kafka Event Stream</div>
+          <div class="arch-sub">Raw event topics for impressions, clicks, installs, signups, purchases, leads, and more.</div>
+          <div class="arch-stat">event-level raw data</div>
+          <div class="arch-details">Kafka represents the streaming boundary: producers emit raw events, and downstream jobs process the same log into warehouse tables.</div>
+        </div>
+        <div class="arch-node black">
+          <div class="arch-title">PySpark Processing</div>
+          <div class="arch-sub">Parses events, adds ingestion metadata, checkpoints streams, and lands bronze data.</div>
+          <div class="arch-stat">streaming ingestion</div>
+          <div class="arch-details">Spark handles schema enforcement, event timestamps, Kafka offsets, and the deterministic device-to-user identity mapping job.</div>
+        </div>
+        <div class="arch-node">
+          <div class="arch-title">BigQuery Bronze</div>
+          <div class="arch-sub">Raw tables preserve event payloads and ingestion metadata for replay/debugging.</div>
+          <div class="arch-stat">growth_raw</div>
+          <div class="arch-details">Bronze is intentionally close to source data. It supports backfills, schema checks, and row-count reconciliation against Kafka.</div>
+        </div>
+        <div class="arch-node red">
+          <div class="arch-title">dbt Silver + Gold</div>
+          <div class="arch-sub">Cleans events, resolves users, builds sessions, facts, dimensions, funnels, cohorts.</div>
+          <div class="arch-stat">15+ marts</div>
+          <div class="arch-details">This layer turns raw events into analysis-ready warehouse models: touchpoints, conversions, user events, campaigns, users, attribution, funnel, and cohort tables.</div>
+        </div>
+        <div class="arch-node">
+          <div class="arch-title">Attribution Engine</div>
+          <div class="arch-sub">First-touch, last-touch, linear, time-decay, and position-based credit assignment.</div>
+          <div class="arch-stat">5 models</div>
+          <div class="arch-details">Each model assigns conversion credit differently, then validates that credit fractions sum to one per conversion.</div>
+        </div>
+        <div class="arch-node black">
+          <div class="arch-title">MetricFlow Semantic Layer</div>
+          <div class="arch-sub">Canonical metrics for DAU, CAC, ROAS, retention, attributed revenue, and funnel conversion.</div>
+          <div class="arch-stat">34 metrics</div>
+          <div class="arch-details">MetricFlow prevents metric drift by defining business meaning and query logic in governed YAML instead of ad hoc dashboard SQL.</div>
+        </div>
+        <div class="arch-node">
+          <div class="arch-title">LLM Data Discovery</div>
+          <div class="arch-sub">OpenAI answers questions by selecting governed metrics, not by inventing SQL.</div>
+          <div class="arch-stat">auditable SQL</div>
+          <div class="arch-details">The assistant routes natural language to MetricFlow queries and exposes generated SQL so the answer can be inspected.</div>
+        </div>
+        <div class="arch-node red">
+          <div class="arch-title">Dashboard Surface</div>
+          <div class="arch-sub">Attribution comparison, funnel/cohort analysis, and natural-language exploration.</div>
+          <div class="arch-stat">3 workflows</div>
+          <div class="arch-details">The dashboard is the product surface for growth teams to diagnose budget allocation, drop-off, retention, and metric questions.</div>
+        </div>
+      </div>
+      <div class="arch-caption">Hover over each component to see what it does, what data it touches, and why it exists in the platform.</div>
+    </div>
     """,
-    use_container_width=True,
+    height=520,
+    scrolling=False,
 )
 
-st.subheader("What A Reviewer Should Notice")
-notice_left, notice_right = st.columns(2)
-with notice_left:
+st.subheader("Project Highlights")
+highlight_cols = st.columns(2)
+with highlight_cols[0]:
     st.markdown(
         """
-        - Multi-objective event design, not a one-funnel toy dataset
-        - Kafka and Spark used for the resume-relevant streaming path
-        - BigQuery/dbt warehouse modeling with bronze, silver, and gold layers
-        - Five attribution models with auditable credit assignment
+        - Models multiple TikTok advertiser objectives instead of assuming every product has the same funnel.
+        - Preserves raw event streams before transforming them into analysis-ready warehouse tables.
+        - Resolves anonymous device behavior into user-level journeys after signup or conversion.
+        - Separates attribution, funnel, cohort, and spend logic so each analysis has a clear source table.
         """
     )
-with notice_right:
+with highlight_cols[1]:
     st.markdown(
         """
-        - Funnel and cohort marts separated from attribution marts
-        - MetricFlow as the semantic layer and business metric contract
-        - LLM interface constrained to governed metrics, not free-form SQL
-        - SQL shown for auditability on every NL answer
+        - Compares five attribution rules and surfaces when model choice changes channel credit.
+        - Defines metrics in a governed semantic layer so CAC, ROAS, retention, and revenue stay consistent.
+        - Lets analysts ask plain-English questions while still showing the generated MetricFlow SQL.
+        - Uses dummy data to mirror real operational problems without exposing customer or platform data.
         """
     )
 
-st.subheader("Demo Paths")
-left, middle, right = st.columns(3)
-with left:
+st.subheader("Explore The Product")
+workflow = st.tabs(["1. Diagnose channel credit", "2. Find funnel drop-off", "3. Ask governed metrics"])
+with workflow[0]:
     st.markdown(
-        """
-        <div class="panel">
-          <h3>Attribution Comparison</h3>
-          <p class="quiet">Compare first-touch, last-touch, linear, time-decay, and position-based revenue by channel.</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
+        "Compare channel revenue under different attribution rules and see whether model choice changes the story."
     )
-    st.page_link("pages/1_Attribution_Comparison.py", label="Open attribution page")
-with middle:
+    st.page_link("pages/1_Attribution_Comparison.py", label="Open Attribution Comparison")
+with workflow[1]:
     st.markdown(
-        """
-        <div class="panel">
-          <h3>Funnel + Cohort</h3>
-          <p class="quiet">Inspect objective-specific funnel drop-off and weekly retention behavior.</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
+        "Review objective-level funnel completion and weekly cohort retention to understand where users drop off."
     )
-    st.page_link("pages/2_Funnel_and_Cohort.py", label="Open funnel page")
-with right:
+    st.page_link("pages/2_Funnel_and_Cohort.py", label="Open Funnel and Cohort")
+with workflow[2]:
     st.markdown(
-        """
-        <div class="panel">
-          <h3>Ask The Data</h3>
-          <p class="quiet">Ask business questions in English and see the governed MetricFlow SQL behind each answer.</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
+        "Ask questions against governed MetricFlow metrics and inspect the generated SQL for auditability."
     )
-    st.page_link("pages/3_Ask_The_Data.py", label="Open NL page")
+    st.page_link("pages/3_Ask_The_Data.py", label="Open Ask The Data")
 
 st.info(
-    "Interview framing: this is not text-to-SQL. The assistant routes questions to governed MetricFlow metrics, "
-    "then exposes the generated SQL for auditability."
+    "Design principle: the natural-language assistant uses governed MetricFlow metrics instead of free-form text-to-SQL, "
+    "so answers are tied to the same definitions used by the dashboard."
 )
