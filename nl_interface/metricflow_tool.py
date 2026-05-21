@@ -12,6 +12,8 @@ from typing import Any
 
 import yaml
 from dotenv import load_dotenv
+from google.cloud import bigquery
+from google.oauth2 import service_account
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -266,6 +268,215 @@ def _extract_sql(explain_output: str) -> str:
     return explain_output[index:].strip()
 
 
+def _bq_client() -> bigquery.Client:
+    project = os.getenv("GCP_PROJECT_ID")
+    keyfile = os.getenv("GCP_SERVICE_ACCOUNT_JSON_PATH")
+    if keyfile and Path(keyfile).exists():
+        credentials = service_account.Credentials.from_service_account_file(keyfile)
+        return bigquery.Client(project=project or credentials.project_id, credentials=credentials)
+    return bigquery.Client(project=project)
+
+
+def _table(name: str) -> str:
+    project = os.getenv("GCP_PROJECT_ID")
+    dataset = os.getenv("BIGQUERY_DATASET_ANALYTICS", "growth_analytics")
+    if not project:
+        raise MetricFlowToolError("GCP_PROJECT_ID is required for BigQuery fallback queries.")
+    return f"`{project}.{dataset}.{name}`"
+
+
+ATTRIBUTION_TABLES = {
+    "first_touch": ("fact_attribution_first_touch", "attribution_record__channel"),
+    "last_touch": ("fact_attribution_last_touch", "attribution_record_last_touch__channel"),
+    "linear": ("fact_attribution_linear", "attribution_record_linear__channel"),
+    "time_decay": ("fact_attribution_time_decay", "attribution_record_time_decay__channel"),
+    "position_based": (
+        "fact_attribution_position_based",
+        "attribution_record_position_based__channel",
+    ),
+}
+
+
+def _attribution_model(metric_name: str) -> str | None:
+    for model in ATTRIBUTION_TABLES:
+        if metric_name.endswith(model):
+            return model
+    return None
+
+
+def _limit_clause(limit: int | None) -> str:
+    return f"\nLIMIT {int(limit)}" if limit else ""
+
+
+def _fallback_sql(metric_name: str, group_by: list[str], limit: int | None) -> str | None:
+    """Equivalent governed SQL for hosted dashboards when MetricFlow CLI fails.
+
+    MetricFlow remains the canonical definition source in the repo. This fallback
+    uses the dbt marts those metrics point to, with aliases matching MetricFlow's
+    output names so the dashboard and NL layer keep the same contract.
+    """
+    group_by = group_by or []
+    first_group = group_by[0] if group_by else None
+
+    model = _attribution_model(metric_name)
+    if model:
+        table_name, channel_alias = ATTRIBUTION_TABLES[model]
+        if metric_name.startswith("attributed_revenue_"):
+            measure = "sum(attributed_revenue)"
+        elif metric_name.startswith("attributed_conversions_"):
+            measure = "sum(credit_fraction)"
+        elif metric_name.startswith("roas_"):
+            spend = f"(select sum(daily_spend) from {_table('fact_campaign_spend_daily')})"
+            measure = f"safe_divide(sum(attributed_revenue), {spend})"
+        elif metric_name.startswith("cac_"):
+            spend = f"(select sum(daily_spend) from {_table('fact_campaign_spend_daily')})"
+            measure = f"safe_divide({spend}, sum(credit_fraction))"
+        else:
+            return None
+
+        if first_group:
+            if first_group != channel_alias:
+                return None
+            return f"""
+SELECT
+  channel AS `{channel_alias}`,
+  {measure} AS `{metric_name}`
+FROM {_table(table_name)}
+GROUP BY 1
+ORDER BY `{metric_name}` DESC{_limit_clause(limit)}
+""".strip()
+        return f"""
+SELECT
+  {measure} AS `{metric_name}`
+FROM {_table(table_name)}{_limit_clause(limit)}
+""".strip()
+
+    if metric_name in {"dau", "wau", "mau"} and first_group == "metric_time":
+        date_expr = {
+            "dau": "event_date",
+            "wau": "date_trunc(event_date, week(monday))",
+            "mau": "date_trunc(event_date, month)",
+        }[metric_name]
+        return f"""
+SELECT
+  {date_expr} AS metric_time__day,
+  count(distinct resolved_user_id) AS `{metric_name}`
+FROM {_table('fact_user_events')}
+GROUP BY 1
+ORDER BY `{metric_name}` DESC{_limit_clause(limit)}
+""".strip()
+
+    if metric_name == "new_signups" and first_group == "event__channel":
+        return f"""
+SELECT
+  channel AS event__channel,
+  count(*) AS new_signups
+FROM {_table('fact_user_events')}
+WHERE event_type = 'signup'
+GROUP BY 1
+ORDER BY new_signups DESC{_limit_clause(limit)}
+""".strip()
+
+    if metric_name == "funnel_step_users":
+        if group_by != ["funnel_completion__objective", "funnel_completion__step_name"]:
+            return None
+        return f"""
+SELECT
+  objective AS funnel_completion__objective,
+  step_name AS funnel_completion__step_name,
+  count(distinct resolved_user_id) AS funnel_step_users
+FROM {_table('funnel_step_completion')}
+GROUP BY 1, 2
+ORDER BY 1, 2{_limit_clause(limit)}
+""".strip()
+
+    if metric_name == "retention_rate":
+        if group_by == ["cohort_week__signup_week", "cohort_week__weeks_since_signup"]:
+            return f"""
+SELECT
+  signup_week AS cohort_week__signup_week,
+  weeks_since_signup AS cohort_week__weeks_since_signup,
+  safe_divide(sum(retained_users), sum(cohort_users)) AS retention_rate
+FROM {_table('cohort_retention_matrix')}
+GROUP BY 1, 2
+ORDER BY 1, 2{_limit_clause(limit)}
+""".strip()
+        if group_by == ["cohort_week__weeks_since_signup"]:
+            return f"""
+SELECT
+  weeks_since_signup AS cohort_week__weeks_since_signup,
+  safe_divide(sum(retained_users), sum(cohort_users)) AS retention_rate
+FROM {_table('cohort_retention_matrix')}
+GROUP BY 1
+ORDER BY 1{_limit_clause(limit)}
+""".strip()
+
+    if metric_name == "conversions" and first_group == "conversion__objective":
+        return f"""
+SELECT
+  objective AS conversion__objective,
+  count(*) AS conversions
+FROM {_table('fact_conversions')}
+GROUP BY 1
+ORDER BY conversions DESC{_limit_clause(limit)}
+""".strip()
+
+    if metric_name == "conversion_value" and first_group == "conversion__objective":
+        return f"""
+SELECT
+  objective AS conversion__objective,
+  sum(conversion_value) AS conversion_value
+FROM {_table('fact_conversions')}
+GROUP BY 1
+ORDER BY conversion_value DESC{_limit_clause(limit)}
+""".strip()
+
+    if metric_name == "total_spend" and first_group == "campaign_spend_day__channel":
+        return f"""
+SELECT
+  channel AS campaign_spend_day__channel,
+  sum(daily_spend) AS total_spend
+FROM {_table('fact_campaign_spend_daily')}
+GROUP BY 1
+ORDER BY total_spend DESC{_limit_clause(limit)}
+""".strip()
+
+    if metric_name == "signup_to_activation_rate" and first_group == "event__channel":
+        return f"""
+SELECT
+  channel AS event__channel,
+  safe_divide(
+    count(distinct if(event_type = 'activation', resolved_user_id, null)),
+    count(distinct if(event_type = 'signup', resolved_user_id, null))
+  ) AS signup_to_activation_rate
+FROM {_table('fact_user_events')}
+WHERE event_type IN ('signup', 'activation')
+GROUP BY 1
+ORDER BY signup_to_activation_rate DESC{_limit_clause(limit)}
+""".strip()
+
+    return None
+
+
+def _query_bigquery_fallback(metric_name: str, group_by: list[str], limit: int | None) -> dict[str, Any]:
+    sql = _fallback_sql(metric_name, group_by, limit)
+    if not sql:
+        raise MetricFlowToolError(
+            f"MetricFlow failed, and no hosted-dashboard fallback exists for `{metric_name}` "
+            f"grouped by {group_by}."
+        )
+    rows = [dict(row.items()) for row in _bq_client().query(sql).result()]
+    columns = list(rows[0].keys()) if rows else []
+    return {
+        "metric_name": metric_name,
+        "group_by": group_by,
+        "columns": columns,
+        "data": rows,
+        "row_count": len(rows),
+        "query_sql": sql,
+    }
+
+
 def query_metric(
     metric_name: str,
     group_by: list[str] | None = None,
@@ -323,6 +534,10 @@ def query_metric(
         _run_command(command)
         columns, rows = _read_csv(csv_path)
         explain_output = _run_command(explain_command)
+    except MetricFlowToolError as error:
+        if "'NoneType' object has no attribute 'close'" in str(error):
+            return _query_bigquery_fallback(metric_name, group_by, limit)
+        raise
     finally:
         csv_path.unlink(missing_ok=True)
 
