@@ -4,7 +4,6 @@ import sys
 from pathlib import Path
 
 import streamlit as st
-import streamlit.components.v1 as components
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -92,7 +91,7 @@ for col, (title, body) in zip(flow_cols, flow_cards, strict=True):
         )
 
 st.subheader("Interactive Architecture")
-components.html(
+st.markdown(
     """
     <style>
       body { margin: 0; font-family: Inter, Arial, sans-serif; color: #15171a; }
@@ -105,31 +104,76 @@ components.html(
           radial-gradient(circle at bottom right, rgba(254,44,85,.13), transparent 32%),
           #ffffff;
       }
-      .arch-grid {
+      .arch-lede {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
+        margin-bottom: 16px;
+      }
+      .arch-lede h3 {
+        margin: 0 0 6px 0;
+        font-size: 20px;
+      }
+      .arch-lede p {
+        margin: 0;
+        color: #667085;
+        font-size: 13px;
+        line-height: 1.45;
+        max-width: 760px;
+      }
+      .arch-pill {
+        flex: 0 0 auto;
+        display: inline-block;
+        padding: 7px 10px;
+        border-radius: 999px;
+        background: #010101;
+        color: #ffffff;
+        font-size: 12px;
+        font-weight: 800;
+      }
+      .pipeline {
         display: grid;
-        grid-template-columns: repeat(5, minmax(150px, 1fr));
-        gap: 14px;
-        align-items: stretch;
+        grid-template-columns: 1fr;
+        gap: 10px;
       }
       .arch-node {
         position: relative;
-        min-height: 118px;
+        min-height: 92px;
         border: 1px solid #d9dee7;
-        border-top: 4px solid #25F4EE;
+        border-left: 5px solid #25F4EE;
         border-radius: 8px;
-        padding: 13px 13px 12px 13px;
+        padding: 13px 16px 12px 16px;
         background: rgba(255,255,255,.94);
         box-shadow: 0 8px 22px rgba(16,24,40,.06);
-        transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+        display: grid;
+        grid-template-columns: 48px minmax(180px, 1.1fr) minmax(240px, 1.5fr) minmax(150px, .8fr);
+        gap: 14px;
+        align-items: center;
+        transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, background .16s ease;
       }
       .arch-node:hover {
-        transform: translateY(-3px);
+        transform: translateX(4px);
         border-color: #25F4EE;
+        background: #fbfeff;
         box-shadow: 0 14px 30px rgba(16,24,40,.12);
         z-index: 5;
       }
-      .arch-node.red { border-top-color: #FE2C55; }
-      .arch-node.black { border-top-color: #010101; }
+      .arch-node.red { border-left-color: #FE2C55; }
+      .arch-node.black { border-left-color: #010101; }
+      .step-num {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        color: #010101;
+        background: #25F4EE;
+        font-weight: 900;
+        font-size: 14px;
+      }
+      .arch-node.red .step-num { background: #FE2C55; color: #fff; }
+      .arch-node.black .step-num { background: #010101; color: #fff; }
       .arch-title {
         font-size: 14px;
         font-weight: 800;
@@ -140,37 +184,48 @@ components.html(
         font-size: 12px;
         line-height: 1.35;
       }
+      .io {
+        color: #344054;
+        font-size: 12px;
+        line-height: 1.45;
+      }
+      .io b {
+        color: #111827;
+      }
       .arch-stat {
         display: inline-block;
-        margin-top: 10px;
         padding: 4px 8px;
         border-radius: 999px;
         background: #f3f4f6;
         color: #111827;
         font-size: 11px;
         font-weight: 700;
+        width: fit-content;
       }
       .arch-details {
-        display: none;
-        position: absolute;
-        left: 10px;
-        right: 10px;
-        top: calc(100% - 8px);
-        padding: 11px 12px;
-        border: 1px solid #dbeafe;
+        grid-column: 2 / 5;
+        max-height: 0;
+        overflow: hidden;
+        padding: 0 12px;
+        border: 0 solid #dbeafe;
         border-radius: 8px;
-        background: #ffffff;
+        background: #f8fafc;
         color: #374151;
         font-size: 12px;
         line-height: 1.42;
-        box-shadow: 0 12px 28px rgba(16,24,40,.16);
+        transition: max-height .18s ease, padding .18s ease, border-width .18s ease;
       }
-      .arch-node:hover .arch-details { display: block; }
+      .arch-node:hover .arch-details {
+        max-height: 92px;
+        padding: 10px 12px;
+        border-width: 1px;
+      }
       .flow-arrow {
         text-align: center;
-        color: #98a2b3;
-        font-size: 18px;
-        padding: 4px 0;
+        color: #010101;
+        font-size: 20px;
+        line-height: 1;
+        opacity: .45;
       }
       .arch-caption {
         margin-top: 14px;
@@ -178,77 +233,139 @@ components.html(
         font-size: 12px;
       }
       @media (max-width: 900px) {
-        .arch-grid { grid-template-columns: repeat(2, minmax(150px, 1fr)); }
+        .arch-lede { display: block; }
+        .arch-pill { margin-top: 10px; }
+        .arch-node {
+          grid-template-columns: 42px 1fr;
+        }
+        .io, .arch-stat, .arch-details {
+          grid-column: 2 / 3;
+        }
       }
     </style>
     <div class="arch-wrap">
-      <div class="arch-grid">
+      <div class="arch-lede">
+        <div>
+          <h3>End-to-end data flow</h3>
+          <p>Read this top to bottom. Each numbered step consumes the output of the previous step and produces the next layer used by the dashboard.</p>
+        </div>
+        <div class="arch-pill">Hover on a step for details</div>
+      </div>
+      <div class="pipeline">
         <div class="arch-node">
-          <div class="arch-title">Advertiser Objectives</div>
-          <div class="arch-sub">App, commerce, lead, subscription, marketplace, awareness, offline.</div>
+          <div class="step-num">1</div>
+          <div>
+            <div class="arch-title">Define Growth Objectives</div>
+            <div class="arch-sub">App, commerce, lead, subscription, marketplace, awareness, offline.</div>
+          </div>
+          <div class="io"><b>Input:</b> campaign objective rules<br><b>Output:</b> objective-specific funnel definitions</div>
           <div class="arch-stat">7 objectives</div>
           <div class="arch-details">The model supports different growth outcomes instead of forcing every product through the same app-install funnel.</div>
         </div>
+        <div class="flow-arrow">↓</div>
         <div class="arch-node red">
-          <div class="arch-title">Synthetic Journey Simulator</div>
-          <div class="arch-sub">Creates user paths with channels, campaigns, devices, countries, and conversion values.</div>
+          <div class="step-num">2</div>
+          <div>
+            <div class="arch-title">Generate Dummy Journeys</div>
+            <div class="arch-sub">Synthetic user paths across channels, campaigns, devices, countries, and conversion values.</div>
+          </div>
+          <div class="io"><b>Input:</b> simulator config + seeded random behavior<br><b>Output:</b> chronological user events</div>
           <div class="arch-stat">10k users / 30 days</div>
           <div class="arch-details">The dummy data is generated from configurable conversion rates, objective distribution, channel shares, ad spend, and time gaps between touchpoints.</div>
         </div>
+        <div class="flow-arrow">↓</div>
         <div class="arch-node">
-          <div class="arch-title">Kafka Event Stream</div>
-          <div class="arch-sub">Raw event topics for impressions, clicks, installs, signups, purchases, leads, and more.</div>
+          <div class="step-num">3</div>
+          <div>
+            <div class="arch-title">Publish Raw Events To Kafka</div>
+            <div class="arch-sub">Topics for impressions, clicks, installs, signups, purchases, leads, and more.</div>
+          </div>
+          <div class="io"><b>Input:</b> generated events<br><b>Output:</b> raw event topics by event family</div>
           <div class="arch-stat">event-level raw data</div>
           <div class="arch-details">Kafka represents the streaming boundary: producers emit raw events, and downstream jobs process the same log into warehouse tables.</div>
         </div>
+        <div class="flow-arrow">↓</div>
         <div class="arch-node black">
-          <div class="arch-title">PySpark Processing</div>
-          <div class="arch-sub">Parses events, adds ingestion metadata, checkpoints streams, and lands bronze data.</div>
+          <div class="step-num">4</div>
+          <div>
+            <div class="arch-title">Process Streams With PySpark</div>
+            <div class="arch-sub">Parse JSON, enforce schemas, add ingestion metadata, and checkpoint offsets.</div>
+          </div>
+          <div class="io"><b>Input:</b> Kafka topics<br><b>Output:</b> parsed bronze-ready event frames</div>
           <div class="arch-stat">streaming ingestion</div>
           <div class="arch-details">Spark handles schema enforcement, event timestamps, Kafka offsets, and the deterministic device-to-user identity mapping job.</div>
         </div>
+        <div class="flow-arrow">↓</div>
         <div class="arch-node">
-          <div class="arch-title">BigQuery Bronze</div>
-          <div class="arch-sub">Raw tables preserve event payloads and ingestion metadata for replay/debugging.</div>
+          <div class="step-num">5</div>
+          <div>
+            <div class="arch-title">Land Bronze Data In BigQuery</div>
+            <div class="arch-sub">Raw warehouse tables preserve event payloads and ingestion metadata.</div>
+          </div>
+          <div class="io"><b>Input:</b> parsed Spark streams<br><b>Output:</b> partitioned raw event tables</div>
           <div class="arch-stat">growth_raw</div>
           <div class="arch-details">Bronze is intentionally close to source data. It supports backfills, schema checks, and row-count reconciliation against Kafka.</div>
         </div>
+        <div class="flow-arrow">↓</div>
         <div class="arch-node red">
-          <div class="arch-title">dbt Silver + Gold</div>
-          <div class="arch-sub">Cleans events, resolves users, builds sessions, facts, dimensions, funnels, cohorts.</div>
+          <div class="step-num">6</div>
+          <div>
+            <div class="arch-title">Build Silver + Gold Models</div>
+            <div class="arch-sub">Clean events, resolve users, build sessions, facts, dimensions, funnels, cohorts.</div>
+          </div>
+          <div class="io"><b>Input:</b> bronze tables<br><b>Output:</b> analysis-ready dbt marts</div>
           <div class="arch-stat">15+ marts</div>
           <div class="arch-details">This layer turns raw events into analysis-ready warehouse models: touchpoints, conversions, user events, campaigns, users, attribution, funnel, and cohort tables.</div>
         </div>
+        <div class="flow-arrow">↓</div>
         <div class="arch-node">
-          <div class="arch-title">Attribution Engine</div>
-          <div class="arch-sub">First-touch, last-touch, linear, time-decay, and position-based credit assignment.</div>
+          <div class="step-num">7</div>
+          <div>
+            <div class="arch-title">Assign Attribution Credit</div>
+            <div class="arch-sub">First-touch, last-touch, linear, time-decay, and position-based rules.</div>
+          </div>
+          <div class="io"><b>Input:</b> touchpoints + conversions<br><b>Output:</b> credited revenue and conversion facts</div>
           <div class="arch-stat">5 models</div>
           <div class="arch-details">Each model assigns conversion credit differently, then validates that credit fractions sum to one per conversion.</div>
         </div>
+        <div class="flow-arrow">↓</div>
         <div class="arch-node black">
-          <div class="arch-title">MetricFlow Semantic Layer</div>
-          <div class="arch-sub">Canonical metrics for DAU, CAC, ROAS, retention, attributed revenue, and funnel conversion.</div>
+          <div class="step-num">8</div>
+          <div>
+            <div class="arch-title">Define Governed Metrics</div>
+            <div class="arch-sub">Canonical DAU, CAC, ROAS, retention, attributed revenue, and funnel conversion.</div>
+          </div>
+          <div class="io"><b>Input:</b> dbt marts<br><b>Output:</b> reusable metric definitions</div>
           <div class="arch-stat">34 metrics</div>
           <div class="arch-details">MetricFlow prevents metric drift by defining business meaning and query logic in governed YAML instead of ad hoc dashboard SQL.</div>
         </div>
+        <div class="flow-arrow">↓</div>
         <div class="arch-node">
-          <div class="arch-title">LLM Data Discovery</div>
-          <div class="arch-sub">OpenAI answers questions by selecting governed metrics, not by inventing SQL.</div>
+          <div class="step-num">9</div>
+          <div>
+            <div class="arch-title">Answer Questions With LLM</div>
+            <div class="arch-sub">OpenAI selects governed metrics rather than inventing raw SQL.</div>
+          </div>
+          <div class="io"><b>Input:</b> analyst question + metric catalog<br><b>Output:</b> MetricFlow query and auditable SQL</div>
           <div class="arch-stat">auditable SQL</div>
           <div class="arch-details">The assistant routes natural language to MetricFlow queries and exposes generated SQL so the answer can be inspected.</div>
         </div>
+        <div class="flow-arrow">↓</div>
         <div class="arch-node red">
-          <div class="arch-title">Dashboard Surface</div>
-          <div class="arch-sub">Attribution comparison, funnel/cohort analysis, and natural-language exploration.</div>
+          <div class="step-num">10</div>
+          <div>
+            <div class="arch-title">Explore In Dashboard</div>
+            <div class="arch-sub">Attribution comparison, funnel/cohort analysis, and natural-language exploration.</div>
+          </div>
+          <div class="io"><b>Input:</b> governed metrics and generated SQL<br><b>Output:</b> product analytics decisions</div>
           <div class="arch-stat">3 workflows</div>
           <div class="arch-details">The dashboard is the product surface for growth teams to diagnose budget allocation, drop-off, retention, and metric questions.</div>
         </div>
       </div>
-      <div class="arch-caption">Hover over each component to see what it does, what data it touches, and why it exists in the platform.</div>
+      <div class="arch-caption">The sequence runs top to bottom. Hover over any step to expand implementation details.</div>
     </div>
     """,
-    height=520,
-    scrolling=False,
+    unsafe_allow_html=True,
 )
 
 st.subheader("Project Highlights")
