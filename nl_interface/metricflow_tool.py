@@ -3,7 +3,6 @@ from __future__ import annotations
 import csv
 import json
 import os
-import re
 import subprocess
 import tempfile
 from functools import lru_cache
@@ -82,38 +81,62 @@ def _load_metric_yaml() -> dict[str, dict[str, Any]]:
 
 
 @lru_cache(maxsize=1)
-def _available_dimensions_from_mf() -> dict[str, list[str]]:
-    _ensure_semantic_manifest()
-    output = _run_command(_metricflow_command("list", "metrics"))
-    dimensions: dict[str, list[str]] = {}
-    for line in output.splitlines():
-        match = re.search(r"•\s+([^:]+):\s+(.*)", line.strip())
-        if not match:
-            continue
-        metric_name = match.group(1).strip()
-        raw_dimensions = match.group(2).strip()
-        if raw_dimensions.endswith(" more"):
-            # `mf list metrics` truncates long lists; keep the visible names and always allow metric_time.
-            raw_dimensions = raw_dimensions.rsplit(" and ", 1)[0]
-        dimensions[metric_name] = [
-            item.strip()
-            for item in raw_dimensions.split(",")
-            if item.strip() and item.strip() != "metric_time"
-        ]
-        if "metric_time" not in dimensions[metric_name]:
-            dimensions[metric_name].append("metric_time")
-    return dimensions
+def _build_metric_dimensions() -> dict[str, list[str]]:
+    """Build metric → available MetricFlow dimensions from semantic model YAML files.
+
+    MetricFlow dimension names follow the convention {primary_entity}__{dim_name}.
+    All metrics also expose metric_time. This replaces CLI-output parsing, which is
+    fragile and returns only metric_time when the output format doesn't match.
+    """
+    semantic_dir = DBT_PROJECT_DIR / "models" / "semantic_models"
+
+    # Step 1: measure name → list of entity-prefixed dimension names
+    measure_dims: dict[str, list[str]] = {}
+    if semantic_dir.exists():
+        for path in sorted(semantic_dir.glob("*.yml")):
+            with path.open("r", encoding="utf-8") as fh:
+                data = yaml.safe_load(fh) or {}
+            for sem_model in data.get("semantic_models", []):
+                primary_entity = next(
+                    (e["name"] for e in sem_model.get("entities", []) if e.get("type") == "primary"),
+                    None,
+                )
+                if not primary_entity:
+                    continue
+                dims = ["metric_time"]
+                for dim in sem_model.get("dimensions", []):
+                    dims.append(f"{primary_entity}__{dim['name']}")
+                for measure in sem_model.get("measures", []):
+                    measure_dims[measure["name"]] = dims
+
+    # Step 2: metric name → dimensions via measure lookup
+    metric_dims: dict[str, list[str]] = {}
+    for path in sorted(METRICS_DIR.glob("*.yml")):
+        with path.open("r", encoding="utf-8") as fh:
+            data = yaml.safe_load(fh) or {}
+        for metric in data.get("metrics", []):
+            name = metric["name"]
+            tp = metric.get("type_params", {})
+            measure = tp.get("measure")
+            if measure:
+                metric_dims[name] = measure_dims.get(measure, ["metric_time"])
+                continue
+            # Ratio metrics: union of numerator and denominator dimensions
+            dims_set: set[str] = {"metric_time"}
+            for key in ("numerator", "denominator"):
+                m = tp.get(key)
+                if m and m in measure_dims:
+                    dims_set.update(measure_dims[m])
+            metric_dims[name] = sorted(dims_set)
+
+    return metric_dims
 
 
 @lru_cache(maxsize=1)
 def list_metrics() -> list[dict[str, Any]]:
-    """Return the governed metric catalog with visible MetricFlow dimensions."""
+    """Return the governed metric catalog with available MetricFlow dimensions."""
     metrics = _load_metric_yaml()
-    try:
-        dimensions = _available_dimensions_from_mf()
-    except MetricFlowToolError:
-        dimensions = {}
-
+    dimensions = _build_metric_dimensions()
     return [
         {
             **metric,
@@ -172,6 +195,7 @@ def query_metric(
 
     group_by = group_by or []
     _validate_query(metric_name, group_by)
+    _ensure_semantic_manifest()
 
     with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as temp_file:
         csv_path = Path(temp_file.name)
