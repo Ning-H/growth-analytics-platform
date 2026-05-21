@@ -285,8 +285,21 @@ def query_metric(
     with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as temp_file:
         csv_path = Path(temp_file.name)
 
-    command = _metricflow_command("query", "--metrics", metric_name, "--csv", str(csv_path))
-    explain_command = _metricflow_command("query", "--metrics", metric_name, "--explain")
+    command = _metricflow_command(
+        "query",
+        "--metrics",
+        metric_name,
+        "--csv",
+        str(csv_path),
+        "--quiet",
+    )
+    explain_command = _metricflow_command(
+        "query",
+        "--metrics",
+        metric_name,
+        "--explain",
+        "--quiet",
+    )
 
     if group_by:
         group_by_arg = ",".join(group_by)
